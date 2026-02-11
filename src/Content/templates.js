@@ -42,13 +42,23 @@ function getDifficultyColors(difficulty) {
     return { difficultyColor, difficultyBg }
 }
 
+function createTagsHtml(tags) {
+    if (!tags || !Array.isArray(tags) || tags.length === 0) return '';
+    return `
+        <div class="rmp-tags">
+            ${tags.map(tag => `<span class="rmp-tag">${tag}</span>`).join('')}
+        </div>
+    `;
+}
 
-export function createProfessorCardTemplate(name, data) {
+
+function createProfessorCardTemplate(name, data, showTags) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const numRatings = data.numRatings || 0;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
     const department = data.department || 'Unknown Department';
     const professorId = data.legacyId || null;
+    const topTags = showTags ? data.topTags : null;
     
     const { ratingColor, ratingBg } = getRatingColors(rating);
     const { difficultyColor } = getDifficultyColors(difficulty);
@@ -82,11 +92,12 @@ export function createProfessorCardTemplate(name, data) {
                 </div>
                 ` : ''}
             </div>
+            ${createTagsHtml(topTags)}
         </div>
     `;
 }
 
-export function createNotFoundCardTemplate(name) {
+function createNotFoundCardTemplate(name) {
     const normalizedName = (name || '').replace(/\s+/g, ' ').trim();
     const searchUrl = `https://www.ratemyprofessors.com/search/professors/15723?q=${encodeURIComponent(normalizedName)}`;
 
@@ -113,10 +124,11 @@ export function createNotFoundCardTemplate(name) {
     `;
 }
 
-export function createCompactCardTemplate(name, data) {
+function createCompactCardTemplate(name, data, showTags) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
     const professorId = data.legacyId || null;
+    const topTags = showTags ? data.topTags : null;
 
 
     const { ratingColor, ratingBg } = getRatingColors(rating);
@@ -142,10 +154,11 @@ export function createCompactCardTemplate(name, data) {
                 <span class="rmp-stat-label">Difficulty</span>
             </div>
         </div>
+        ${createTagsHtml(topTags)}
     `;
 }
 
-export function createCompactNotFoundCardTemplate(name) {
+function createCompactNotFoundCardTemplate(name) {
     const normalizedName = (name || '').replace(/\s+/g, ' ').trim();
     const searchUrl = `https://www.ratemyprofessors.com/search/professors/15723?q=${encodeURIComponent(normalizedName)}`;
 
@@ -157,4 +170,32 @@ export function createCompactNotFoundCardTemplate(name) {
             </a>
         </div>
     `;
+}
+
+export function createProfessorCard(name, data, showTags) {
+    const card = document.createElement('div');
+    card.className = 'rmp-card';
+    card.innerHTML = createProfessorCardTemplate(name, data, showTags);
+    return card;
+}
+
+export function createNotFoundCard(name) {
+    const card = document.createElement('div');
+    card.className = 'rmp-card rmp-not-found';
+    card.innerHTML = createNotFoundCardTemplate(name);
+    return card;
+}
+
+export function createCompactCard(name, data, showTags) {
+    const card = document.createElement('div');
+    card.className = 'rmp-card rmp-compact-card';
+    card.innerHTML = createCompactCardTemplate(name, data, showTags);
+    return card;
+}
+
+export function createCompactNotFoundCard(name) {
+    const card = document.createElement('div');
+    card.className = 'rmp-card rmp-compact-card';
+    card.innerHTML = createCompactNotFoundCardTemplate(name);
+    return card;
 }
