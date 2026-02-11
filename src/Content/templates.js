@@ -42,13 +42,23 @@ function getDifficultyColors(difficulty) {
     return { difficultyColor, difficultyBg }
 }
 
+function createTagsHtml(tags) {
+    if (!tags || !Array.isArray(tags) || tags.length === 0) return '';
+    return `
+        <div class="rmp-tags">
+            ${tags.map(tag => `<span class="rmp-tag">${tag}</span>`).join('')}
+        </div>
+    `;
+}
 
-function createProfessorCardTemplate(name, data) {
+
+function createProfessorCardTemplate(name, data, showTags) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const numRatings = data.numRatings || 0;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
     const department = data.department || 'Unknown Department';
     const professorId = data.legacyId || null;
+    const topTags = showTags ? data.topTags : null;
     
     const { ratingColor, ratingBg } = getRatingColors(rating);
     const { difficultyColor } = getDifficultyColors(difficulty);
@@ -82,6 +92,7 @@ function createProfessorCardTemplate(name, data) {
                 </div>
                 ` : ''}
             </div>
+            ${createTagsHtml(topTags)}
         </div>
     `;
 }
@@ -113,10 +124,11 @@ function createNotFoundCardTemplate(name) {
     `;
 }
 
-function createCompactCardTemplate(name, data) {
+function createCompactCardTemplate(name, data, showTags) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
     const professorId = data.legacyId || null;
+    const topTags = showTags ? data.topTags : null;
 
 
     const { ratingColor, ratingBg } = getRatingColors(rating);
@@ -142,6 +154,7 @@ function createCompactCardTemplate(name, data) {
                 <span class="rmp-stat-label">Difficulty</span>
             </div>
         </div>
+        ${createTagsHtml(topTags)}
     `;
 }
 
@@ -159,10 +172,10 @@ function createCompactNotFoundCardTemplate(name) {
     `;
 }
 
-export function createProfessorCard(name, data) {
+export function createProfessorCard(name, data, showTags) {
     const card = document.createElement('div');
     card.className = 'rmp-card';
-    card.innerHTML = createProfessorCardTemplate(name, data);
+    card.innerHTML = createProfessorCardTemplate(name, data, showTags);
     return card;
 }
 
@@ -173,10 +186,10 @@ export function createNotFoundCard(name) {
     return card;
 }
 
-export function createCompactCard(name, data) {
+export function createCompactCard(name, data, showTags) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-compact-card';
-    card.innerHTML = createCompactCardTemplate(name, data);
+    card.innerHTML = createCompactCardTemplate(name, data, showTags);
     return card;
 }
 

@@ -79,17 +79,18 @@ function injectProfessorCard(name, data) {
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
         
-        chrome.storage.sync.get({ compact_cards: false }, (result) => {
+        chrome.storage.sync.get({ compact_cards: false, show_tags: false }, (result) => {
             // Re-check in callback to avoid race conditions with repeated observers/responses
             if (div.querySelector('.rmp-card')) return;
 
             const useCompact = Boolean(result.compact_cards);
+            const showTags = Boolean(result.show_tags);
             let card;
 
             if (useCompact) {
-                card = createCompactCard(name, data);
+                card = createCompactCard(name, data, showTags);
             } else {
-                card = createProfessorCard(name, data);
+                card = createProfessorCard(name, data, showTags);
             }
 
             if (card) {
