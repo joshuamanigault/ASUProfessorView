@@ -246,7 +246,6 @@ chrome.runtime.onMessage.addListener(
         try {
           const professor_info = await getRateMyProfessorData(request.professorName);
           
-          // Check if it's a cached failure
           if (professor_info.error) {
             sendResponse({ 
               success: false, 
