@@ -150,7 +150,6 @@ async function searchAsuCampuses(professorName: string) {
           if (topTags) {
             result.topTags = topTags;
           }
-          console.log("Result: ", result);
           return result;
         } else {
           console.debug(`Name mismatch at ${campus}: expected "${nameToSearch}", got "${result.firstName} ${result.lastName}"`);
