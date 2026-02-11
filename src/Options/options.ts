@@ -1,15 +1,18 @@
 type Options = {
     compact_cards: boolean;
+    show_tags: boolean;
 };
 
 // Defaults used when no user preference is stored yet
 const DEFAULTS: Options = {
-    compact_cards: false
+    compact_cards: false,
+    show_tags: false
 };
 
 // Map option keys to DOM element ids
 const KEY_TO_ID: Record<keyof Options, string> = {
     compact_cards: "compact-cards",
+    show_tags: "show-tags",
 };
 
 function setStoreLink() {
@@ -41,7 +44,8 @@ function loadOptions(): Promise<Options> {
         chrome.storage.sync.get(DEFAULTS, (result) => {
             // Result is a partial that always contains the provided defaults
             resolve({
-                compact_cards: Boolean(result.compact_cards)
+                compact_cards: Boolean(result.compact_cards),
+                show_tags: Boolean(result.show_tags)
             });
         });
     });
@@ -78,9 +82,11 @@ async function initOptionsPage() {
     // Load saved values and reflect in UI
     const opts = await loadOptions();
     setCheckboxDom(KEY_TO_ID.compact_cards, opts.compact_cards);
+    setCheckboxDom(KEY_TO_ID.show_tags, opts.show_tags);
 
     // Bind interactions
     bindCheckbox("compact_cards");
+    bindCheckbox("show_tags");
 }
 
 if (document.readyState === "loading") {

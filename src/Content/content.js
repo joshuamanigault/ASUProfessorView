@@ -1,5 +1,5 @@
 import styles from './content.styles.css?inline'
-import { createProfessorCardTemplate, createNotFoundCardTemplate, createCompactCardTemplate, createCompactNotFoundCardTemplate } from "./templates.js";
+import { createProfessorCard, createNotFoundCard, createCompactCard, createCompactNotFoundCard } from "./templates.js";
 
 function findProfessors() {
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
@@ -18,7 +18,6 @@ function findProfessors() {
         }
     });
 
-    // console.debug('Names length:', names.length);
     if (names.length > 0) {
         processProfessorSequentially(names);
     } 
@@ -68,7 +67,6 @@ async function processProfessorSequentially(names)  {
 }
 
 function injectProfessorCard(name, data) {
-    // Find all professor links with this name
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
     
     instructorDivs.forEach((div) => {
@@ -81,17 +79,18 @@ function injectProfessorCard(name, data) {
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
         
-        chrome.storage.sync.get({ compact_cards: false }, (result) => {
+        chrome.storage.sync.get({ compact_cards: false, show_tags: false }, (result) => {
             // Re-check in callback to avoid race conditions with repeated observers/responses
             if (div.querySelector('.rmp-card')) return;
 
             const useCompact = Boolean(result.compact_cards);
+            const showTags = Boolean(result.show_tags);
             let card;
 
             if (useCompact) {
-                card = createCompactCard(name, data);
+                card = createCompactCard(name, data, showTags);
             } else {
-                card = createProfessorCard(name, data);
+                card = createProfessorCard(name, data, showTags);
             }
 
             if (card) {
@@ -131,34 +130,6 @@ function injectNotFoundCard(name) {
             }
         });
     });
-}
-
-function createProfessorCard(name, data) {
-    const card = document.createElement('div');
-    card.className = 'rmp-card';
-    card.innerHTML = createProfessorCardTemplate(name, data);
-    return card;
-}
-
-function createNotFoundCard(name) {
-    const card = document.createElement('div');
-    card.className = 'rmp-card rmp-not-found';
-    card.innerHTML = createNotFoundCardTemplate(name);
-    return card;
-}
-
-function createCompactCard(name, data) {
-    const card = document.createElement('div');
-    card.className = 'rmp-card rmp-compact-card';
-    card.innerHTML = createCompactCardTemplate(name, data);
-    return card;
-}
-
-function createCompactNotFoundCard(name) {
-    const card = document.createElement('div');
-    card.className = 'rmp-card rmp-compact-card';
-    card.innerHTML = createCompactNotFoundCardTemplate(name);
-    return card;
 }
 
 

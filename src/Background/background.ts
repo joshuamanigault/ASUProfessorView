@@ -58,6 +58,31 @@ async function getTagFrequency(professorName: string): Promise<Map<string, numbe
   }
 }
 
+// Function to get top 5 tags by freq
+async function getTopTags(professorName: string): Promise<string[] | null>{
+  try {
+    const tagFrequency = await getTagFrequency(professorName);
+    if (tagFrequency === null) {
+      return null;
+    }
+
+    if (tagFrequency.size >= 1 && tagFrequency.size <= 5) {
+      return Array.from(tagFrequency.keys());
+    }
+
+    const sortedTags = Array.from(tagFrequency.entries());
+    sortedTags.sort((a, b) => b[1] - a[1]);
+    const top5Entries = sortedTags.slice(0, 5);
+    const topTags = top5Entries.map(entry => entry[0]);
+
+    return topTags;
+  }
+  catch (error) {
+    console.error("Error getting top tags:", error);
+    return null;
+  }
+}
+
 
 function applyNameReplacements(professorName: string): string {
   // Direct replacement
@@ -121,7 +146,11 @@ async function searchAsuCampuses(professorName: string) {
         
         if (validateProfessor(professorName, result, nameToSearch)) {
           console.debug(`Found match at ${campus}: ${result.firstName} ${result.lastName}`);
-          await getTagFrequency(nameToSearch);
+          const topTags = await getTopTags(nameToSearch);
+          if (topTags) {
+            result.topTags = topTags;
+          }
+          console.log("Result: ", result);
           return result;
         } else {
           console.debug(`Name mismatch at ${campus}: expected "${nameToSearch}", got "${result.firstName} ${result.lastName}"`);
@@ -204,13 +233,10 @@ async function getRateMyProfessorData(professorName: string) {
     }
 
     try {
-      // Fetch data from API
       const result = await searchAsuCampuses(professorName);
 
-      // Maintain the cache size
       maintainCacheSize();
       
-      // Cache the result
       professorCache.set(cacheKey, result);
       professorTimestamps.set(cacheKey, Date.now());
       lastRequestTime = Date.now();
@@ -233,7 +259,6 @@ async function getRateMyProfessorData(professorName: string) {
       professorCache.set(cacheKey, failureResult);
       professorTimestamps.set(cacheKey, Date.now());
       
-      // Return the failure result instead of throwing
       return failureResult;
     }
   });
