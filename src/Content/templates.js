@@ -1,3 +1,10 @@
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+
 function getRatingColors(rating) {
     let ratingColor = '#6b7280';
     let ratingBg = '#f3f4f6';
@@ -46,7 +53,7 @@ function createTagsHtml(tags) {
     if (!tags || !Array.isArray(tags) || tags.length === 0) return '';
     return `
         <div class="rmp-tags">
-            ${tags.map(tag => `<span class="rmp-tag">${tag}</span>`).join('')}
+            ${tags.map(tag => `<span class="rmp-tag">${escapeHTML(tag)}</span>`).join('')}
         </div>
     `;
 }
@@ -69,10 +76,10 @@ function createProfessorCardTemplate(name, data, showTags) {
                 <div class="rmp-info">
                     <div class="rmp-name">${
                         professorId
-                            ? `<a href="https://www.ratemyprofessors.com/professor/${professorId}" target="_blank" rel="noopener noreferrer">${name}</a>`
-                            : `${name}`
+                            ? `<a href="https://www.ratemyprofessors.com/professor/${professorId}" target="_blank" rel="noopener noreferrer">${escapeHTML(name)}</a>`
+                            : `${escapeHTML(name)}`
                     }</div>
-                    <div class="rmp-department">${department}</div>
+                    <div class="rmp-department">${escapeHTML(department)}</div>
                 </div>
                 <div class="rmp-rating-badge" style="background-color: ${ratingBg}; color: ${ratingColor};">
                     ${rating ? rating.toFixed(1) : 'N/A'}
@@ -82,7 +89,7 @@ function createProfessorCardTemplate(name, data, showTags) {
                 <div class="rmp-stat">
                     <span class="rmp-stat-label">Rating</span>
                     <span class="rmp-stat-value" style="color: ${ratingColor};">${rating ? rating.toFixed(1) : 'N/A'}</span>
-                    <span class="rmp-stat-detail">${numRatings} reviews</span>
+                    <span class="rmp-stat-detail">${escapeHTML(numRatings)} reviews</span>
                 </div>
                 ${difficulty ? `
                 <div class="rmp-stat">
@@ -105,7 +112,7 @@ function createNotFoundCardTemplate(name) {
         <div class="rmp-card-content">
             <div class="rmp-header">
                 <div class="rmp-info">
-                    <div class="rmp-name">${name}</div>
+                    <div class="rmp-name">${escapeHTML(name)}</div>
                     <div class="rmp-department">Rate My Professor</div>
                 </div>
                 <div class="rmp-not-found-badge">
@@ -138,8 +145,8 @@ function createCompactCardTemplate(name, data, showTags) {
         <div class="rmp-compact-card-content">
             <div class="rmp-compact-name">${
                     professorId
-                        ? `<a href="https://www.ratemyprofessors.com/professor/${professorId}" target="_blank" rel="noopener noreferrer">${name}</a>`
-                        : `${name}`
+                        ? `<a href="https://www.ratemyprofessors.com/professor/${professorId}" target="_blank" rel="noopener noreferrer">${escapeHTML(name)}</a>`
+                        : `${escapeHTML(name)}`
             }</div>
             <div>
                 <div class="rmp-rating-badge" style="background-color: ${ratingBg}; color: ${ratingColor};">
@@ -164,7 +171,7 @@ function createCompactNotFoundCardTemplate(name) {
 
     return `
         <div class="rmp-compact-card-content">
-            <div class="rmp-compact-name">${name}</div>
+            <div class="rmp-compact-name">${escapeHTML(name)}</div>
             <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="rmp-compact-not-found-message">
                 No data · Search RMP
             </a>
