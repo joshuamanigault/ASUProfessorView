@@ -1,5 +1,8 @@
 import styles from './content.styles.css?inline'
 import { createProfessorCard, createNotFoundCard, createCompactCard, createCompactNotFoundCard } from "./templates.js";
+import { Semaphore } from "es-toolkit";
+
+const semaphore = new Semaphore(3);
 
 function findProfessors() {
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
@@ -19,7 +22,7 @@ function findProfessors() {
     });
 
     if (names.length > 0) {
-        processProfessorSequentially(names);
+        processProfessorConcurrently(names);
     } 
 }
 
@@ -37,14 +40,14 @@ function sendMessage(message) {
     });
 }
 
-// Process professors sequentially
-async function processProfessorSequentially(names)  {
+async function processProfessorConcurrently(names)  {
     if (!chrome.runtime?.id) {
         console.error('Extension context invalidated - please refresh the page');
         return;
     }
 
-    for (const name of names) {
+    const tasks = names.map(async (name) => {
+        await semaphore.acquire();
         try {
             const response = await sendMessage({professorName: name});
             console.debug('Data for: ' + name, response); 
@@ -62,8 +65,12 @@ async function processProfessorSequentially(names)  {
                 injectNotFoundCard(name);
             }
             console.error('Error fetching data for: ' + name, error);
+        } finally {
+            semaphore.release();
         }
-    }
+    });
+
+    await Promise.all(tasks);
 }
 
 function injectProfessorCard(name, data) {
