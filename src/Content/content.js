@@ -3,8 +3,10 @@ import { createProfessorCard, createNotFoundCard, createCompactCard, createCompa
 import { Semaphore } from "es-toolkit";
 
 const semaphore = new Semaphore(3);
+const divNameMap = new Map();
 
 function findProfessors() {
+    divNameMap.clear();
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
     const names = [];
 
@@ -16,14 +18,22 @@ function findProfessors() {
         const rawName = link.innerText.trim();
         const normalizedName = rawName.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 
-        if (!div.querySelector('.rmp-card') && !names.includes(normalizedName)) {
+        if (div.querySelector('.rmp-card')) return;
+
+        if (divNameMap.has(normalizedName)) {
+            divNameMap.get(normalizedName).push(div);
+        } else {
+            divNameMap.set(normalizedName, [div]);
+        }
+
+        if (!names.includes(normalizedName)) {
             names.push(normalizedName);
         }
     });
 
     if (names.length > 0) {
         processProfessorConcurrently(names);
-    } 
+    }
 }
 
 // Send message to background script
@@ -50,7 +60,6 @@ async function processProfessorConcurrently(names)  {
         await semaphore.acquire();
         try {
             const response = await sendMessage({professorName: name});
-            console.debug('Data for: ' + name, response); 
 
             if (response?.success) {
                 injectProfessorCard(name, response.data);
@@ -74,7 +83,7 @@ async function processProfessorConcurrently(names)  {
 }
 
 function injectProfessorCard(name, data) {
-    const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
+    const instructorDivs = divNameMap.get(name) || [];
     
     instructorDivs.forEach((div) => {
         const link = div.querySelector('a');
@@ -108,7 +117,7 @@ function injectProfessorCard(name, data) {
 }
 
 function injectNotFoundCard(name) {
-    const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
+    const instructorDivs = divNameMap.get(name) || [];
     
     instructorDivs.forEach((div) => {
         const link = div.querySelector('a');
