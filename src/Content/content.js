@@ -1,7 +1,12 @@
 import styles from './content.styles.css?inline'
 import { createProfessorCard, createNotFoundCard, createCompactCard, createCompactNotFoundCard } from "./templates.js";
+import { Semaphore } from "es-toolkit";
+
+const semaphore = new Semaphore(3);
+const divNameMap = new Map();
 
 function findProfessors() {
+    divNameMap.clear();
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
     const names = [];
 
@@ -13,17 +18,24 @@ function findProfessors() {
         const rawName = link.innerText.trim();
         const normalizedName = rawName.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 
-        if (!div.querySelector('.rmp-card') && !names.includes(normalizedName)) {
+        if (div.querySelector('.rmp-card')) return;
+
+        if (divNameMap.has(normalizedName)) {
+            divNameMap.get(normalizedName).push(div);
+        } else {
+            divNameMap.set(normalizedName, [div]);
+        }
+
+        if (!names.includes(normalizedName)) {
             names.push(normalizedName);
         }
     });
 
     if (names.length > 0) {
-        processProfessorSequentially(names);
-    } 
+        processProfessorConcurrently(names);
+    }
 }
 
-// Send message to background script
 
 function sendMessage(message) {
     return new Promise((resolve, reject) => {
@@ -37,37 +49,49 @@ function sendMessage(message) {
     });
 }
 
-// Process professors sequentially
-async function processProfessorSequentially(names)  {
+async function processProfessorConcurrently(names)  {
     if (!chrome.runtime?.id) {
         console.error('Extension context invalidated - please refresh the page');
         return;
     }
 
-    for (const name of names) {
+    const options = await new Promise((resolve) => {
+        chrome.storage.sync.get({ compact_cards: false, show_tags: false }, (prefs) => {
+            resolve({
+                useCompact: Boolean(prefs.compact_cards),
+                showTags: Boolean(prefs.show_tags)
+            });
+        });
+    });
+
+    const tasks = names.map(async (name) => {
+        await semaphore.acquire();
         try {
             const response = await sendMessage({professorName: name});
-            console.debug('Data for: ' + name, response); 
 
             if (response?.success) {
-                injectProfessorCard(name, response.data);
+                injectProfessorCard(name, response.data, options.useCompact, options.showTags);
             } else {
-                injectNotFoundCard(name);
+                injectNotFoundCard(name, options.useCompact);
             }
         } catch (error) {
             if (error.message?.includes('Extension context invalidated')) {
                 console.error('Extension context invalidated - please refresh the page');
                 return;
             } else {
-                injectNotFoundCard(name);
+                injectNotFoundCard(name, options.useCompact);
             }
             console.error('Error fetching data for: ' + name, error);
+        } finally {
+            semaphore.release();
         }
-    }
+    });
+
+    await Promise.all(tasks);
 }
 
-function injectProfessorCard(name, data) {
-    const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
+function injectProfessorCard(name, data, compactOption, showTagOption) {
+    const instructorDivs = divNameMap.get(name) || [];
     
     instructorDivs.forEach((div) => {
         const link = div.querySelector('a');
@@ -78,30 +102,22 @@ function injectProfessorCard(name, data) {
         
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
-        
-        chrome.storage.sync.get({ compact_cards: false, show_tags: false }, (result) => {
-            // Re-check in callback to avoid race conditions with repeated observers/responses
-            if (div.querySelector('.rmp-card')) return;
 
-            const useCompact = Boolean(result.compact_cards);
-            const showTags = Boolean(result.show_tags);
-            let card;
+        let card;
+        if (compactOption) {
+            card = createCompactCard(name, data, showTagOption) 
+        } else {
+            card = createProfessorCard(name, data, showTagOption);
+        }
 
-            if (useCompact) {
-                card = createCompactCard(name, data, showTags);
-            } else {
-                card = createProfessorCard(name, data, showTags);
-            }
-
-            if (card) {
-                link.insertAdjacentElement('afterend', card);
-            }
-        });
+        if (card) {
+            link.insertAdjacentElement('afterend', card);
+        }
     });
 }
 
-function injectNotFoundCard(name) {
-    const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
+function injectNotFoundCard(name, compactOption) {
+    const instructorDivs = divNameMap.get(name) || [];
     
     instructorDivs.forEach((div) => {
         const link = div.querySelector('a');
@@ -113,22 +129,16 @@ function injectNotFoundCard(name) {
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
 
-        chrome.storage.sync.get({ compact_cards: false }, (result) => {
-            if (div.querySelector('.rmp-card')) return;
+        let card;
+        if (compactOption) {
+            card = createCompactNotFoundCard(name);
+        } else {
+            card = createNotFoundCard(name);
+        }
 
-            const useCompact = Boolean(result.compact_cards);
-            let card;
-
-            if (useCompact) {
-                card = createCompactNotFoundCard(name);
-            } else {
-                card = createNotFoundCard(name);
-            }
-
-            if (card) {
-                link.insertAdjacentElement('afterend', card);
-            }
-        });
+        if (card) {
+            link.insertAdjacentElement('afterend', card);
+        }
     });
 }
 
@@ -156,7 +166,7 @@ function debounce(func, wait) {
     };
 }
 
-// Run after page load
+// Find professors on the initial load of the website
 window.addEventListener('load', findProfessors);
 
 // Also run immediately in case the page is already loaded

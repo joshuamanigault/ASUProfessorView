@@ -1,9 +1,5 @@
 import { RateMyProfessor } from "rate-my-professor-api-ts"
 
-let lastRequestTime = 0;
-let requestQueue: Promise<any> = Promise.resolve();
-
-const DELAY = 100;
 const CACHE_SIZE_LIMIT = 100;
 const professorCache = new Map<string, any>();
 const professorTimestamps = new Map<string, number>();
@@ -205,7 +201,6 @@ function maintainCacheSize() {
 
 
 async function getRateMyProfessorData(professorName: string) {
-  // Check the cache first
   const cacheKey = professorName.toLowerCase().trim();
   const cachedData = professorCache.get(cacheKey);
   const cachedTime = professorTimestamps.get(cacheKey);
@@ -215,52 +210,32 @@ async function getRateMyProfessorData(professorName: string) {
     return cachedData;
   }
 
-  return requestQueue = requestQueue.then(async () => {
-    const freshCachedData = professorCache.get(cacheKey);
-    const freshCachedTime = professorTimestamps.get(cacheKey);
+  try {
+    const result = await searchAsuCampuses(professorName);
 
-    if (freshCachedData && freshCachedTime && (Date.now() - freshCachedTime) < CACHE_DURATION) {
-      console.log('Cache hit after queue for:', professorName);
-      return freshCachedData;
-    }
+    maintainCacheSize();
+    
+    professorCache.set(cacheKey, result);
+    professorTimestamps.set(cacheKey, Date.now());
 
-    const currentTime = Date.now();
-    const timeSinceLastRequest = currentTime - lastRequestTime;
-
-    if (timeSinceLastRequest < DELAY) {
-      await new Promise(resolve => setTimeout(resolve, DELAY - timeSinceLastRequest));
-    }
-
-    try {
-      const result = await searchAsuCampuses(professorName);
-
-      maintainCacheSize();
-      
-      professorCache.set(cacheKey, result);
-      professorTimestamps.set(cacheKey, Date.now());
-      lastRequestTime = Date.now();
-
-      return result;
-    } catch (error) {
-      lastRequestTime = Date.now();
-      
-      // Log the error but don't crash the extension
-      console.warn(`IMPORTANT: Could not find professor "${professorName}":`, error instanceof Error ? error.message : error);
-      
-      // Cache the failure to avoid repeated failed requests
-      const failureResult = {
-        error: true,
-        message: `Professor "${professorName}" not found`,
-        searchedName: professorName,
-        timestamp: Date.now()
-      };
-      
-      professorCache.set(cacheKey, failureResult);
-      professorTimestamps.set(cacheKey, Date.now());
-      
-      return failureResult;
-    }
-  });
+    return result;
+  } catch (error) {
+    // Log the error but don't crash the extension
+    console.warn(`IMPORTANT: Could not find professor "${professorName}":`, error instanceof Error ? error.message : error);
+    
+    // Cache the failure to avoid repeated failed requests
+    const failureResult = {
+      error: true,
+      message: `Professor "${professorName}" not found`,
+      searchedName: professorName,
+      timestamp: Date.now()
+    };
+    
+    professorCache.set(cacheKey, failureResult);
+    professorTimestamps.set(cacheKey, Date.now());
+    
+    return failureResult;
+  }
 }
 
 chrome.runtime.onMessage.addListener(
