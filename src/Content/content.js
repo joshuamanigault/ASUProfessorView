@@ -56,22 +56,31 @@ async function processProfessorConcurrently(names)  {
         return;
     }
 
+    const options = await new Promise((resolve) => {
+        chrome.storage.sync.get({ compact_cards: false, show_tags: false }, (prefs) => {
+            resolve({
+                useCompact: Boolean(prefs.compact_cards),
+                showTags: Boolean(prefs.show_tags)
+            });
+        });
+    });
+
     const tasks = names.map(async (name) => {
         await semaphore.acquire();
         try {
             const response = await sendMessage({professorName: name});
 
             if (response?.success) {
-                injectProfessorCard(name, response.data);
+                injectProfessorCard(name, response.data, options.useCompact, options.showTags);
             } else {
-                injectNotFoundCard(name);
+                injectNotFoundCard(name, options.useCompact);
             }
         } catch (error) {
             if (error.message?.includes('Extension context invalidated')) {
                 console.error('Extension context invalidated - please refresh the page');
                 return;
             } else {
-                injectNotFoundCard(name);
+                injectNotFoundCard(name, options.useCompact);
             }
             console.error('Error fetching data for: ' + name, error);
         } finally {
@@ -82,7 +91,7 @@ async function processProfessorConcurrently(names)  {
     await Promise.all(tasks);
 }
 
-function injectProfessorCard(name, data) {
+function injectProfessorCard(name, data, compactOption, showTagOption) {
     const instructorDivs = divNameMap.get(name) || [];
     
     instructorDivs.forEach((div) => {
@@ -94,29 +103,21 @@ function injectProfessorCard(name, data) {
         
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
-        
-        chrome.storage.sync.get({ compact_cards: false, show_tags: false }, (result) => {
-            // Re-check in callback to avoid race conditions with repeated observers/responses
-            if (div.querySelector('.rmp-card')) return;
 
-            const useCompact = Boolean(result.compact_cards);
-            const showTags = Boolean(result.show_tags);
-            let card;
+        let card;
+        if (compactOption) {
+            card = createCompactCard(name, data, showTagOption) 
+        } else {
+            card = createProfessorCard(name, data, showTagOption);
+        }
 
-            if (useCompact) {
-                card = createCompactCard(name, data, showTags);
-            } else {
-                card = createProfessorCard(name, data, showTags);
-            }
-
-            if (card) {
-                link.insertAdjacentElement('afterend', card);
-            }
-        });
+        if (card) {
+            link.insertAdjacentElement('afterend', card);
+        }
     });
 }
 
-function injectNotFoundCard(name) {
+function injectNotFoundCard(name, compactOption) {
     const instructorDivs = divNameMap.get(name) || [];
     
     instructorDivs.forEach((div) => {
@@ -129,22 +130,16 @@ function injectNotFoundCard(name) {
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
 
-        chrome.storage.sync.get({ compact_cards: false }, (result) => {
-            if (div.querySelector('.rmp-card')) return;
+        let card;
+        if (compactOption) {
+            card = createCompactNotFoundCard(name);
+        } else {
+            card = createNotFoundCard(name);
+        }
 
-            const useCompact = Boolean(result.compact_cards);
-            let card;
-
-            if (useCompact) {
-                card = createCompactNotFoundCard(name);
-            } else {
-                card = createNotFoundCard(name);
-            }
-
-            if (card) {
-                link.insertAdjacentElement('afterend', card);
-            }
-        });
+        if (card) {
+            link.insertAdjacentElement('afterend', card);
+        }
     });
 }
 
