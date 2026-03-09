@@ -36,7 +36,6 @@ function findProfessors() {
     }
 }
 
-// Send message to background script
 
 function sendMessage(message) {
     return new Promise((resolve, reject) => {
@@ -167,7 +166,7 @@ function debounce(func, wait) {
     };
 }
 
-// Run after page load
+// Find professors on the initial load of the website
 window.addEventListener('load', findProfessors);
 
 // Also run immediately in case the page is already loaded
