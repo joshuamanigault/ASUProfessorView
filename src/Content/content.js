@@ -9,6 +9,7 @@ function findProfessors() {
     divNameMap.clear();
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
     const names = [];
+    const namesCheck = new Set();
 
     instructorDivs.forEach((div) => {
         const link = div.querySelector('a');
@@ -26,9 +27,10 @@ function findProfessors() {
             divNameMap.set(normalizedName, [div]);
         }
 
-        if (!names.includes(normalizedName)) {
+        if (!namesCheck.has(normalizedName)) {
             names.push(normalizedName);
-        }
+            namesCheck.add(normalizedName);
+        };
     });
 
     if (names.length > 0) {
