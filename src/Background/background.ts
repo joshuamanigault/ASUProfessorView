@@ -11,16 +11,6 @@ const ASU_CAMPUSES = [
   "Arizona State University - West Campus"
 ]
 
-const ASU_PROFESSOR_NAME_REPLACEMENTS: { [key: string]: string} = {
-  "Steven Baer": "Steve Baer",
-  //"Shyla Gonzalez Dogan": "Shyla Dogan",
-  "Carla van de Sande": "Carla Van De Sande",
-  //"Christopher Felix Gozo": "Christopher Gozo",
-  "Josh Klein": "Joshua Klein",
-  //"Fabio Suzart de Albuquerque": "Fabio Albuquerque",
-  "Zahra Sadri Moshkenani": "Zahra Sadri-Moshekenani"
-}
-
 async function getTagFrequency(professorName: string): Promise<Map<string, number> | null> {
   try {
     const rmp_instance = new RateMyProfessor("Arizona State University", professorName);
