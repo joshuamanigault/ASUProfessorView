@@ -92,7 +92,6 @@ async function searchAsuCampuses(professorName: string) {
   }
 
 
-  
   // Try each name variation across all campuses
   for (const nameToSearch of namesToTry) {
     console.debug(`Trying name variation: "${nameToSearch}"`);
