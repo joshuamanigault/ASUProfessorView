@@ -17,7 +17,8 @@ function findProfessors() {
 
         // Remove hyphens and extra spaces from the name
         const rawName = link.innerText.trim();
-        const normalizedName = rawName.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedName = rawName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        console.log("Normalized name: " + normalizedName);
 
         if (div.querySelector('.rmp-card')) return;
 
@@ -100,7 +101,7 @@ function injectProfessorCard(name, data, compactOption, showTagOption) {
         if (!link) return;
         
         const rawLinkName = link.innerText.trim();
-        const normalizedLinkName = rawLinkName.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedLinkName = rawLinkName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
         
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
@@ -126,7 +127,7 @@ function injectNotFoundCard(name, compactOption) {
         if (!link) return;
 
         const rawLinkName = link.innerText.trim();
-        const normalizedLinkName = rawLinkName.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedLinkName = rawLinkName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
