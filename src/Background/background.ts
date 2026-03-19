@@ -131,14 +131,13 @@ function validateProfessor(originalName: string, professorData: any, searchedNam
     return false;
   }
 
-  // Normalize both names consistently - remove extra spaces and trim
   const fetchedFullName = `${professorData.firstName} ${professorData.lastName}`
     .trim()
-    .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+    .replace(/\s+/g, ' ');
   
   const nameToValidate = (searchedName || originalName)
     .trim()
-    .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+    .replace(/\s+/g, ' '); 
 
 
   if (nameToValidate !== fetchedFullName) {
