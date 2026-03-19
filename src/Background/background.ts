@@ -1,8 +1,6 @@
 import { RateMyProfessor } from "rate-my-professor-api-ts"
 
-const CACHE_SIZE_LIMIT = 100;
-const professorCache = new Map<string, any>();
-const professorTimestamps = new Map<string, number>();
+const storage = chrome.storage.local;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 mins * 60 secs * 1000 ms
 
 const ASU_CAMPUSES = [
@@ -147,39 +145,46 @@ function validateProfessor(originalName: string, professorData: any, searchedNam
   }
 }
 
-function maintainCacheSize() {
-  if (professorCache.size >= CACHE_SIZE_LIMIT) {
-        const entries = Array.from(professorTimestamps.entries())
-          .sort(([,a], [,b]) => a - b)
-          .slice(0, 50);
-        
-        entries.forEach(([key]) => {
-          professorCache.delete(key);
-          professorTimestamps.delete(key);
-        })
-      }
+
+async function setWithExpiration(key: string, value: any, ttl: number): Promise<void> {
+  const item = {
+    value: value,
+    expiry: Date.now() + ttl
+  }
+
+  await storage.set({ [key]: item});
 }
 
+async function getWithExpiration(key: string): Promise<any | null> {
+  const result = await storage.get([key]);
+  const item = result[key];
+
+  if (!item) {
+    return null;
+  }
+
+  if (Date.now() >= item.expiry) {
+    await storage.remove([key]);
+    return null;
+  }
+
+  return item.value;
+}
 
 async function getRateMyProfessorData(professorName: string) {
   const cacheKey = professorName.toLowerCase().trim();
-  const cachedData = professorCache.get(cacheKey);
-  const cachedTime = professorTimestamps.get(cacheKey);
+  const cachedData = await getWithExpiration(cacheKey);
 
-  if (cachedData && cachedTime && (Date.now() - cachedTime) < CACHE_DURATION) {
-    console.log('Cache hit for:', professorName);
+  if (cachedData !== null) {
+    console.debug(`Cache hit for "${professorName}"`);
     return cachedData;
   }
 
   try {
     const result = await searchAsuCampuses(professorName);
-
-    maintainCacheSize();
-    
-    professorCache.set(cacheKey, result);
-    professorTimestamps.set(cacheKey, Date.now());
-
+    await setWithExpiration(cacheKey, result, CACHE_DURATION);
     return result;
+
   } catch (error) {
     // Log the error but don't crash the extension
     console.warn(`IMPORTANT: Could not find professor "${professorName}":`, error instanceof Error ? error.message : error);
@@ -192,8 +197,7 @@ async function getRateMyProfessorData(professorName: string) {
       timestamp: Date.now()
     };
     
-    professorCache.set(cacheKey, failureResult);
-    professorTimestamps.set(cacheKey, Date.now());
+    await setWithExpiration(cacheKey, failureResult, CACHE_DURATION);
     
     return failureResult;
   }
