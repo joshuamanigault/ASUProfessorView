@@ -6,7 +6,8 @@
     "author": "n.joshuamanigault@gmail.com",
     "homepage_url": "https://github.com/joshuamanigault/ASUProfessorView",
     "permissions": [
-        "storage"
+        "storage",
+        "alarms"
     ],
     "action": {
         "default_popup": "popup.html"
