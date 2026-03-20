@@ -1,13 +1,78 @@
 import { RateMyProfessor } from "rate-my-professor-api-ts"
 
 const storage = chrome.storage.local;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 mins * 60 secs * 1000 ms
-
+const CACHE_DURATION = 5 * 60 * 1000; // This is 5 mins in ms
+const CLEANUP_INTERVAL = 60 * 12 // This is 12 hours in mins
+const CLEANUP_ALARM_NAME = 'cleanupExpiredEntries';
 const ASU_CAMPUSES = [
   "Arizona State University",
   "Arizona State University - Polytechnic Campus",
   "Arizona State University - West Campus"
 ]
+
+
+async function checkAlarmState(): Promise<void> {
+  try {
+    const alarm = await chrome.alarms.get(CLEANUP_ALARM_NAME);
+
+    if (!alarm) {
+      await chrome.alarms.create(CLEANUP_ALARM_NAME, { periodInMinutes: CLEANUP_INTERVAL })
+    }
+  }
+  catch (error) {
+    console.error('Error checking or creating alarm: ', error);
+  }
+}
+
+checkAlarmState();
+
+async function cleanupExpiredEntries(): Promise<void> {
+  try {
+    const allEntries = await storage.get(null);
+    const keysToRemove: string[] = [];
+    const now = Date.now();
+ 
+    for (const [key, value] of Object.entries(allEntries)) {
+      if (value && typeof value === 'object' && 'expiry' in value) {
+        if (now >= value.expiry) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    if (keysToRemove.length > 0) {
+      await storage.remove(keysToRemove);
+    }
+  }
+  catch (error) {
+    console.error("Error during cleanup of expired entries: ", error);
+  }
+}
+
+async function setWithExpiration(key: string, value: any, ttl: number): Promise<void> {
+  const item = {
+    value: value,
+    expiry: Date.now() + ttl
+  }
+
+  await storage.set({ [key]: item});
+}
+
+async function getWithExpiration(key: string): Promise<any | null> {
+  const result = await storage.get([key]);
+  const item = result[key];
+
+  if (!item) {
+    return null;
+  }
+
+  if (Date.now() >= item.expiry) {
+    await storage.remove([key]);
+    return null;
+  }
+
+  return item.value;
+}
 
 async function getTagFrequency(professorName: string): Promise<Map<string, number> | null> {
   try {
@@ -66,7 +131,6 @@ async function getTopTags(professorName: string): Promise<string[] | null>{
     return null;
   }
 }
-
 
 async function searchAsuCampuses(professorName: string) {
   const errors: string[] = [];
@@ -145,32 +209,6 @@ function validateProfessor(originalName: string, professorData: any, searchedNam
   }
 }
 
-
-async function setWithExpiration(key: string, value: any, ttl: number): Promise<void> {
-  const item = {
-    value: value,
-    expiry: Date.now() + ttl
-  }
-
-  await storage.set({ [key]: item});
-}
-
-async function getWithExpiration(key: string): Promise<any | null> {
-  const result = await storage.get([key]);
-  const item = result[key];
-
-  if (!item) {
-    return null;
-  }
-
-  if (Date.now() >= item.expiry) {
-    await storage.remove([key]);
-    return null;
-  }
-
-  return item.value;
-}
-
 async function getRateMyProfessorData(professorName: string) {
   const cacheKey = professorName.toLowerCase().trim();
   const cachedData = await getWithExpiration(cacheKey);
@@ -233,3 +271,9 @@ chrome.runtime.onMessage.addListener(
     }
   }
 );
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === CLEANUP_ALARM_NAME) {
+    cleanupExpiredEntries();
+  }
+});
