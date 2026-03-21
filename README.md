@@ -4,6 +4,8 @@
 
 This Chrome extension enhances the Arizona State University class catalog by showing professor ratings and reviews from Rate My Professor right where you need them.
 
+![ASU ProfessorView GIF](https://github.com/user-attachments/assets/4f67c63b-aeab-4876-be88-0b264a0b1a5b)
+
 ---
 
 ## Features
