@@ -220,7 +220,13 @@ async function getRateMyProfessorData(professorName: string) {
 
   try {
     const result = await searchAsuCampuses(professorName);
-    await setWithExpiration(cacheKey, result, CACHE_DURATION);
+    try {
+      await setWithExpiration(cacheKey, result, CACHE_DURATION);
+    }
+    catch (storageError) {
+      console.warn(`Cache write failed for "${professorName}":`, storageError);
+    }
+
     return result;
 
   } catch (error) {
@@ -235,7 +241,12 @@ async function getRateMyProfessorData(professorName: string) {
       timestamp: Date.now()
     };
     
-    await setWithExpiration(cacheKey, failureResult, CACHE_DURATION);
+    try {
+      await setWithExpiration(cacheKey, failureResult, CACHE_DURATION);
+    }
+    catch (storageError) {
+      console.warn(`Cache write for failure result failed: `, storageError);
+    }
     
     return failureResult;
   }
