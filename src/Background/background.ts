@@ -1,15 +1,78 @@
 import { RateMyProfessor } from "rate-my-professor-api-ts"
 
-const CACHE_SIZE_LIMIT = 100;
-const professorCache = new Map<string, any>();
-const professorTimestamps = new Map<string, number>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 mins * 60 secs * 1000 ms
-
+const storage = chrome.storage.local;
+const CACHE_DURATION = 5 * 60 * 1000; // This is 5 mins in ms
+const CLEANUP_INTERVAL = 60 // This an hour in minutes
+const CLEANUP_ALARM_NAME = 'cleanupExpiredEntries';
 const ASU_CAMPUSES = [
   "Arizona State University",
   "Arizona State University - Polytechnic Campus",
   "Arizona State University - West Campus"
 ]
+
+
+async function checkAlarmState(): Promise<void> {
+  try {
+    const alarm = await chrome.alarms.get(CLEANUP_ALARM_NAME);
+
+    if (!alarm) {
+      await chrome.alarms.create(CLEANUP_ALARM_NAME, { periodInMinutes: CLEANUP_INTERVAL })
+    }
+  }
+  catch (error) {
+    console.error('Error checking or creating alarm: ', error);
+  }
+}
+
+checkAlarmState();
+
+async function cleanupExpiredEntries(): Promise<void> {
+  try {
+    const allEntries = await storage.get(null);
+    const keysToRemove: string[] = [];
+    const now = Date.now();
+ 
+    for (const [key, value] of Object.entries(allEntries)) {
+      if (value && typeof value === 'object' && 'expiry' in value) {
+        if (now >= value.expiry) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    if (keysToRemove.length > 0) {
+      await storage.remove(keysToRemove);
+    }
+  }
+  catch (error) {
+    console.error("Error during cleanup of expired entries: ", error);
+  }
+}
+
+async function setWithExpiration(key: string, value: any, ttl: number): Promise<void> {
+  const item = {
+    value: value,
+    expiry: Date.now() + ttl
+  }
+
+  await storage.set({ [key]: item});
+}
+
+async function getWithExpiration(key: string): Promise<any | null> {
+  const result = await storage.get([key]);
+  const item = result[key];
+
+  if (!item) {
+    return null;
+  }
+
+  if (Date.now() >= item.expiry) {
+    await storage.remove([key]);
+    return null;
+  }
+
+  return item.value;
+}
 
 async function getTagFrequency(professorName: string): Promise<Map<string, number> | null> {
   try {
@@ -68,7 +131,6 @@ async function getTopTags(professorName: string): Promise<string[] | null>{
     return null;
   }
 }
-
 
 async function searchAsuCampuses(professorName: string) {
   const errors: string[] = [];
@@ -131,14 +193,13 @@ function validateProfessor(originalName: string, professorData: any, searchedNam
     return false;
   }
 
-  // Normalize both names consistently - remove extra spaces and trim
   const fetchedFullName = `${professorData.firstName} ${professorData.lastName}`
     .trim()
-    .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+    .replace(/\s+/g, ' ');
   
   const nameToValidate = (searchedName || originalName)
     .trim()
-    .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+    .replace(/\s+/g, ' '); 
 
 
   if (nameToValidate !== fetchedFullName) {
@@ -148,39 +209,26 @@ function validateProfessor(originalName: string, professorData: any, searchedNam
   }
 }
 
-function maintainCacheSize() {
-  if (professorCache.size >= CACHE_SIZE_LIMIT) {
-        const entries = Array.from(professorTimestamps.entries())
-          .sort(([,a], [,b]) => a - b)
-          .slice(0, 50);
-        
-        entries.forEach(([key]) => {
-          professorCache.delete(key);
-          professorTimestamps.delete(key);
-        })
-      }
-}
-
-
 async function getRateMyProfessorData(professorName: string) {
   const cacheKey = professorName.toLowerCase().trim();
-  const cachedData = professorCache.get(cacheKey);
-  const cachedTime = professorTimestamps.get(cacheKey);
+  const cachedData = await getWithExpiration(cacheKey);
 
-  if (cachedData && cachedTime && (Date.now() - cachedTime) < CACHE_DURATION) {
-    console.log('Cache hit for:', professorName);
+  if (cachedData !== null) {
+    console.debug(`Cache hit for "${professorName}"`);
     return cachedData;
   }
 
   try {
     const result = await searchAsuCampuses(professorName);
-
-    maintainCacheSize();
-    
-    professorCache.set(cacheKey, result);
-    professorTimestamps.set(cacheKey, Date.now());
+    try {
+      await setWithExpiration(cacheKey, result, CACHE_DURATION);
+    }
+    catch (storageError) {
+      console.warn(`Cache write failed for "${professorName}":`, storageError);
+    }
 
     return result;
+
   } catch (error) {
     // Log the error but don't crash the extension
     console.warn(`IMPORTANT: Could not find professor "${professorName}":`, error instanceof Error ? error.message : error);
@@ -193,8 +241,12 @@ async function getRateMyProfessorData(professorName: string) {
       timestamp: Date.now()
     };
     
-    professorCache.set(cacheKey, failureResult);
-    professorTimestamps.set(cacheKey, Date.now());
+    try {
+      await setWithExpiration(cacheKey, failureResult, CACHE_DURATION);
+    }
+    catch (storageError) {
+      console.warn(`Cache write for failure result failed: `, storageError);
+    }
     
     return failureResult;
   }
@@ -230,3 +282,13 @@ chrome.runtime.onMessage.addListener(
     }
   }
 );
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === CLEANUP_ALARM_NAME) {
+    try {
+      await cleanupExpiredEntries();
+    } catch (error) {
+      console.error("Alarm cleanup failed:", error);
+    }
+  }
+});
