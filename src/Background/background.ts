@@ -272,8 +272,12 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === CLEANUP_ALARM_NAME) {
-    cleanupExpiredEntries();
+    try {
+      await cleanupExpiredEntries();
+    } catch (error) {
+      console.error("Alarm cleanup failed:", error);
+    }
   }
 });
