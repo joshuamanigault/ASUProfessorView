@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "npx tsx src/rmp-api.ts",
-    "build": "tsc && vite build",
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:chrome": "cross-env BUILD_TARGET=chrome vite build",
+    "build:firefox": "cross-env BUILD_TARGET=firefox vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.12",
     "@types/node": "^24.5.2",
+    "cross-env": "^10.1.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.6"
   },
