@@ -27,6 +27,10 @@
             "strict_min_version": "109.0"
         }
     },
+    "data_collection_permissions": {
+        "required": [],
+        "optional": []
+    },
     "content_scripts": [
         {
             "matches": ["https://catalog.apps.asu.edu/*"],
