@@ -16,10 +16,12 @@ const KEY_TO_ID: Record<keyof Options, string> = {
 };
 
 function setStoreLink() {
-    const storeUrl =
-        "https://chromewebstore.google.com/detail/asu-professorview/kniajfafepienoohdheheofabfclpgnl";
-
-    // Implement Firefox logic later
+    // @ts-expect-error: InstallTrigger is a Firefox specific global
+    const isFirefox = typeof InstallTrigger !== "undefined";
+    let storeUrl = "https://chromewebstore.google.com/detail/asu-professorview/kniajfafepienoohdheheofabfclpgnl";
+    if (isFirefox) {
+        storeUrl = "https://addons.mozilla.org";  // TODO: add actual firefox store when done tesing
+    }
     
     document.querySelectorAll<HTMLAnchorElement>("a.store-link").forEach((a) => {
         a.href = storeUrl;
