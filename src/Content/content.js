@@ -18,7 +18,6 @@ function findProfessors() {
         // Remove hyphens and extra spaces from the name
         const rawName = link.innerText.trim();
         const normalizedName = rawName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-        console.log("Normalized name: " + normalizedName);
 
         if (div.querySelector('.rmp-card')) return;
 
