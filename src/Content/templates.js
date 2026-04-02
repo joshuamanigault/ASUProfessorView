@@ -4,6 +4,12 @@ function escapeHTML(str) {
     return div.innerHTML;
 }
 
+function createElementFromHTML(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    return template.content;
+}
+
 
 function getRatingColors(rating) {
     let ratingColor = '#6b7280';
@@ -182,27 +188,31 @@ function createCompactNotFoundCardTemplate(name) {
 export function createProfessorCard(name, data, showTags) {
     const card = document.createElement('div');
     card.className = 'rmp-card';
-    card.innerHTML = createProfessorCardTemplate(name, data, showTags);
+    const content = createElementFromHTML(createProfessorCardTemplate(name, data, showTags));
+    card.appendChild(content);
     return card;
 }
 
 export function createNotFoundCard(name) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-not-found';
-    card.innerHTML = createNotFoundCardTemplate(name);
+    const content = createElementFromHTML(createNotFoundCardTemplate(name));
+    card.appendChild(content);
     return card;
 }
 
 export function createCompactCard(name, data, showTags) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-compact-card';
-    card.innerHTML = createCompactCardTemplate(name, data, showTags);
+    const content = createElementFromHTML(createCompactCardTemplate(name, data, showTags));
+    card.appendChild(content);
     return card;
 }
 
 export function createCompactNotFoundCard(name) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-compact-card';
-    card.innerHTML = createCompactNotFoundCardTemplate(name);
+    const content = createElementFromHTML(createCompactNotFoundCardTemplate(name));
+    card.appendChild(content);
     return card;
 }
