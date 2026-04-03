@@ -20,7 +20,7 @@ function setStoreLink() {
     const isFirefox = typeof InstallTrigger !== "undefined";
     let storeUrl = "https://chromewebstore.google.com/detail/asu-professorview/kniajfafepienoohdheheofabfclpgnl";
     if (isFirefox) {
-        storeUrl = "https://addons.mozilla.org";  // TODO: add actual firefox store when done tesing
+        storeUrl = "https://addons.mozilla.org/en-US/firefox/addon/asu-professorview/";
     }
     
     document.querySelectorAll<HTMLAnchorElement>("a.store-link").forEach((a) => {
