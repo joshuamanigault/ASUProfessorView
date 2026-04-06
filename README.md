@@ -15,12 +15,10 @@ A cross-browser extension that enhances the Arizona State University class catal
     <img src="https://img.shields.io/badge/Download-Chrome-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Download for Chrome">
   </a>
   &nbsp;&nbsp;
-  <a href="#firefox-add-ons">
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/asu-professorview/">
     <img src="https://img.shields.io/badge/Download-Firefox-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Download for Firefox">
   </a>
 </p>
-
-> **Note:** Firefox Add-ons release coming soon. For now, see [Development Installation](#development-installation) to load the extension manually.
 
 ---
 
@@ -53,11 +51,13 @@ No separate Rate My Professor searches needed!
 
 1. Visit the [Chrome Web Store listing](https://chromewebstore.google.com/detail/asu-profview/kniajfafepienoohdheheofabfclpgnl)
 2. Click "Add to Chrome"
-3. Navigate to ASU Class Search and refresh the page
+3. Navigate to ASU's Class Search and refresh the page
 
 ### Firefox Add-ons
 
-Coming soon to Firefox Add-ons (AMO). For now, see [Development Installation](#development-installation) below.
+1. Visit the [Firefox Add-Ons Browser](https://addons.mozilla.org/en-US/firefox/addon/asu-professorview/)
+2. Click "Add to Firefox"
+3. Navigate to ASU's Class Search and refresh the page
 
 ### Development Installation
 
