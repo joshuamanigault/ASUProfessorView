@@ -80,7 +80,6 @@ async function getTagFrequency(professorName: string): Promise<Map<string, numbe
     const result = await rmp_instance.get_comments_by_professor();
 
     if (!result || result.length === 0) {
-      console.log("No comments found for the professor.");
       return null;
     }
 
@@ -156,29 +155,24 @@ async function searchAsuCampuses(professorName: string) {
 
   // Try each name variation across all campuses
   for (const nameToSearch of namesToTry) {
-    console.debug(`Trying name variation: "${nameToSearch}"`);
     
     for (const campus of ASU_CAMPUSES) {
       try {
-        console.debug(`Searching ${campus} for: ${nameToSearch}`);
         const rmp_instance = new RateMyProfessor(campus, nameToSearch);
         const result = await rmp_instance.get_professor_info();
         
         if (validateProfessor(professorName, result, nameToSearch)) {
-          console.debug(`Found match at ${campus}: ${result.firstName} ${result.lastName}`);
           const topTags = await getTopTags(nameToSearch);
           if (topTags) {
             result.topTags = topTags;
           }
           return result;
         } else {
-          console.debug(`Name mismatch at ${campus}: expected "${nameToSearch}", got "${result.firstName} ${result.lastName}"`);
           continue;
         }
       } catch (error) {
         const errorMsg = `${campus} (${nameToSearch}): ${error instanceof Error ? error.message : 'Unknown error'}`;
         errors.push(errorMsg);
-        console.debug(`Error message: ${errorMsg}`);
         continue; 
       }
     }
@@ -214,7 +208,6 @@ async function getRateMyProfessorData(professorName: string) {
   const cachedData = await getWithExpiration(cacheKey);
 
   if (cachedData !== null) {
-    console.debug(`Cache hit for "${professorName}"`);
     return cachedData;
   }
 
