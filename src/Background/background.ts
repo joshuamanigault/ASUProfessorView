@@ -2,7 +2,7 @@ import { RateMyProfessor } from "rate-my-professor-api-ts"
 
 const storage = chrome.storage.local;
 const CACHE_DURATION = 5 * 60 * 1000; // This is 5 mins in ms
-const CLEANUP_INTERVAL = 60 // This an hour in minutes
+const CLEANUP_INTERVAL = 5 // 5 my noots
 const CLEANUP_ALARM_NAME = 'cleanupExpiredEntries';
 const ASU_CAMPUSES = [
   "Arizona State University",
