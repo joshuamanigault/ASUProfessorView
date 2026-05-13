@@ -5,8 +5,6 @@ const CACHE_DURATION = 10 * 60 * 1000; // This is 10 mins in ms
 const CLEANUP_INTERVAL = 10 // 10 minutes
 const CLEANUP_ALARM_NAME = 'cleanupExpiredEntries';
 const CACHE_CLEAR_MESSAGE = "clearProfessorCache";
-const CACHE_KEY_PREFIX = "professorCache_";
-
 const ASU_CAMPUSES = [
   "Arizona State University",
   "Arizona State University - Polytechnic Campus",
@@ -207,7 +205,7 @@ function validateProfessor(originalName: string, professorData: any, searchedNam
 }
 
 async function getRateMyProfessorData(professorName: string) {
-  const cacheKey = `${CACHE_KEY_PREFIX}${professorName.toLowerCase().trim()}`;
+  const cacheKey = professorName.toLowerCase().trim();
   const cachedData = await getWithExpiration(cacheKey);
 
   if (cachedData !== null) {
@@ -240,12 +238,7 @@ async function getRateMyProfessorData(professorName: string) {
 }
 
 async function clearProfessorCache() {
-  const all = await chrome.storage.local.get(null);
-  const keysToRemove = Object.keys(all).filter((key) => key.startsWith(CACHE_KEY_PREFIX));
-
-  if (keysToRemove.length > 0) {
-    await chrome.storage.local.remove(keysToRemove);
-  }
+  await storage.clear();
 }
 
 chrome.runtime.onMessage.addListener(
