@@ -9,8 +9,12 @@ if (clearCacheButton) {
             }
 
             if (response?.success) {
-                alert("Professor cache cleared successfully.");
+                clearCacheButton.textContent = "Cache Cleared!";
+                setTimeout(() => {
+                    clearCacheButton.textContent = "Clear Professor Cache";
+                }, 2000);
             } else {
+                clearCacheButton.textContent = "Failed to Clear!";
                 console.error("Failed to clear professor cache via popup button:", response?.error);
             }
         });
