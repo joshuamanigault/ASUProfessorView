@@ -1,5 +1,5 @@
 const clearCacheButton = document.getElementById("clear-cache-button");
-    const clearCacheButtonLabel = document.getElementById("clear-cache-button-label");
+const clearCacheButtonLabel = document.getElementById("clear-cache-button-label");
 
 if (clearCacheButton) {
     clearCacheButton.addEventListener("click", () => {
