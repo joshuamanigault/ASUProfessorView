@@ -31,6 +31,7 @@ export default defineConfig({
         copyFileSync("src/Options/options.css", `${outDir}/options.css`);
         copyFileSync("src/Content/content.styles.css", `${outDir}/content.styles.css`);
         copyFileSync("src/Content/templates.js", `${outDir}/templates.js`);
+        copyFileSync("src/Popup/popup.js", `${outDir}/popup.js`);
       },
     },
   ],

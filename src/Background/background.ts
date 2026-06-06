@@ -1,9 +1,10 @@
 import { RateMyProfessor } from "rate-my-professor-api-ts"
 
 const storage = chrome.storage.local;
-const CACHE_DURATION = 5 * 60 * 1000; // This is 5 mins in ms
-const CLEANUP_INTERVAL = 5 // 5 my noots
+const CACHE_DURATION = 10 * 60 * 1000; // This is 10 mins in ms
+const CLEANUP_INTERVAL = 10 // 10 minutes
 const CLEANUP_ALARM_NAME = 'cleanupExpiredEntries';
+const CACHE_CLEAR_MESSAGE = "clearProfessorCache";
 const ASU_CAMPUSES = [
   "Arizona State University",
   "Arizona State University - Polytechnic Campus",
@@ -223,26 +224,21 @@ async function getRateMyProfessorData(professorName: string) {
     return result;
 
   } catch (error) {
-    // Log the error but don't crash the extension
     console.warn(`IMPORTANT: Could not find professor "${professorName}":`, error instanceof Error ? error.message : error);
-    
-    // Cache the failure to avoid repeated failed requests
+
     const failureResult = {
       error: true,
       message: `Professor "${professorName}" not found`,
       searchedName: professorName,
       timestamp: Date.now()
     };
-    
-    try {
-      await setWithExpiration(cacheKey, failureResult, CACHE_DURATION);
-    }
-    catch (storageError) {
-      console.warn(`Cache write for failure result failed: `, storageError);
-    }
-    
+
     return failureResult;
   }
+}
+
+async function clearProfessorCache() {
+  await storage.clear();
 }
 
 chrome.runtime.onMessage.addListener(
@@ -256,7 +252,7 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ 
               success: false, 
               error: professor_info.message,
-              cached: true 
+              cached: false 
             });
           } else {
             sendResponse({ success: true, data: professor_info });
@@ -272,6 +268,20 @@ chrome.runtime.onMessage.addListener(
       })();
 
       return true; // Keep the message channel open for async response
+    }
+    else if (request.type === CACHE_CLEAR_MESSAGE) {
+      (async () => {
+        try {
+          await clearProfessorCache();
+          sendResponse({ success: true });
+        }
+        catch (error) {
+          console.error("Error clearing professor cache:", error);
+          sendResponse({ success: false, error: error instanceof Error ? error.message : "Unknown error"});
+        }
+      })();
+
+      return true;
     }
   }
 );

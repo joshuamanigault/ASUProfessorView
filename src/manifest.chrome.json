@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "ASU ProfessorView",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "description": "Rate My Professor Plugin for ASU Class Search. See professor ratings directly in ASU Class Search.",
     "author": "n.joshuamanigault@gmail.com",
     "homepage_url": "https://github.com/joshuamanigault/ASUProfessorView",
