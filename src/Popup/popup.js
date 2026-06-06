@@ -31,6 +31,11 @@ if (clearCacheButton) {
                     clearCacheButtonLabel.textContent = "Failed to Clear!";
                 }
                 console.error("Failed to clear professor cache via popup button:", response?.error);
+                setTimeout(() => {
+                    if (clearCacheButtonLabel) {
+                        clearCacheButtonLabel.textContent = "Clear Cache";
+                    }
+                }, 2000);
             }
         });
     });
