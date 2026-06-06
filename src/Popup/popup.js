@@ -1,4 +1,5 @@
 const clearCacheButton = document.getElementById("clear-cache-button");
+    const clearCacheButtonLabel = document.getElementById("clear-cache-button-label");
 
 if (clearCacheButton) {
     clearCacheButton.addEventListener("click", () => {
@@ -9,12 +10,18 @@ if (clearCacheButton) {
             }
 
             if (response?.success) {
-                clearCacheButton.textContent = "Cache Cleared!";
+                if (clearCacheButtonLabel) {
+                    clearCacheButtonLabel.textContent = "Cache Cleared!";
+                }
                 setTimeout(() => {
-                    clearCacheButton.textContent = "Clear Professor Cache";
+                    if (clearCacheButtonLabel) {
+                        clearCacheButtonLabel.textContent = "Clear Cache";
+                    }
                 }, 2000);
             } else {
-                clearCacheButton.textContent = "Failed to Clear!";
+                if (clearCacheButtonLabel) {
+                    clearCacheButtonLabel.textContent = "Failed to Clear!";
+                }
                 console.error("Failed to clear professor cache via popup button:", response?.error);
             }
         });
