@@ -65,7 +65,7 @@ For developers or users who want to install manually:
 
 #### Prerequisites
 
-- Node.js 16+ and npm
+- Node.js 20+ and npm
 - Chrome or Firefox browser
 
 #### Build from Source
