@@ -5,6 +5,10 @@ import { Semaphore } from "es-toolkit";
 const semaphore = new Semaphore(3);
 const divNameMap = new Map();
 
+function normalizeName(name) {
+    return name.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function findProfessors() {
     divNameMap.clear();
     const instructorDivs = document.querySelectorAll('div.instructor.class-results-cell');
@@ -17,7 +21,7 @@ function findProfessors() {
 
         // Remove hyphens and extra spaces from the name
         const rawName = link.innerText.trim();
-        const normalizedName = rawName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedName = normalizeName(rawName)
 
         if (div.querySelector('.rmp-card')) return;
 
@@ -100,7 +104,7 @@ function injectProfessorCard(name, data, compactOption, showTagOption) {
         if (!link) return;
         
         const rawLinkName = link.innerText.trim();
-        const normalizedLinkName = rawLinkName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedLinkName = normalizeName(rawLinkName);
         
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
@@ -126,7 +130,7 @@ function injectNotFoundCard(name, compactOption) {
         if (!link) return;
 
         const rawLinkName = link.innerText.trim();
-        const normalizedLinkName = rawLinkName.replace(/^'[^']+'\s*/, '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedLinkName = normalizeName(rawLinkName);
 
         if (normalizedLinkName !== name) return;
         if (div.querySelector('.rmp-card')) return;
