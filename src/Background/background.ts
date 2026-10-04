@@ -75,9 +75,9 @@ async function getWithExpiration(key: string): Promise<any | null> {
   return item.value;
 }
 
-async function getTagFrequency(professorName: string): Promise<Map<string, number> | null> {
+async function getTagFrequency(professorName: string, campus: string): Promise<Map<string, number> | null> {
   try {
-    const rmp_instance = new RateMyProfessor("Arizona State University", professorName);
+    const rmp_instance = new RateMyProfessor(campus, professorName);
     const result = await rmp_instance.get_comments_by_professor();
 
     if (!result || result.length === 0) {
@@ -108,9 +108,9 @@ async function getTagFrequency(professorName: string): Promise<Map<string, numbe
 }
 
 // Function to get top 5 tags by freq
-async function getTopTags(professorName: string): Promise<string[] | null>{
+async function getTopTags(professorName: string, campus: string): Promise<string[] | null>{
   try {
-    const tagFrequency = await getTagFrequency(professorName);
+    const tagFrequency = await getTagFrequency(professorName, campus);
     if (tagFrequency === null) {
       return null;
     }
@@ -139,7 +139,7 @@ async function searchAsuCampuses(professorName: string) {
   const namesToTry = [professorName];
   const nameParts = professorName.split(' ');
   
-  // Add variations: first name only, last name only
+  // Add variations
   if (nameParts.length >= 2) {
     const firstName = nameParts[0];
     const lastName = nameParts[nameParts.length - 1];
@@ -163,7 +163,7 @@ async function searchAsuCampuses(professorName: string) {
         const result = await rmp_instance.get_professor_info();
         
         if (validateProfessor(professorName, result, nameToSearch)) {
-          const topTags = await getTopTags(nameToSearch);
+          const topTags = await getTopTags(nameToSearch, campus);
           if (topTags) {
             result.topTags = topTags;
           }
