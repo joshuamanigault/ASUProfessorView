@@ -79,6 +79,8 @@ For developers or users who want to install manually:
 2. **Install dependencies**
    ```bash
    npm ci
+   # or 
+   npm install
    ```
 
 3. **Build the extension**
