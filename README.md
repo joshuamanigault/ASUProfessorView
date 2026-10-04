@@ -147,8 +147,6 @@ warnings in the minified background bundle and one dynamic `innerHTML` warning
 in the content bundle. Hostile template values are covered by regression tests.
 The RMP adapter and further response validation remain Phase 2 work.
 
-Implementation progress and the remaining phases are tracked in
-[the implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ---
 
