@@ -8,6 +8,8 @@
     "build": "npm run build:chrome && npm run build:firefox",
     "build:chrome": "cross-env BUILD_TARGET=chrome vite build",
     "build:firefox": "cross-env BUILD_TARGET=firefox vite build",
+    "test": "node --test tests/*.test.js",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
   "devDependencies": {

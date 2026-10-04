@@ -1,3 +1,9 @@
+.rmp-card-list {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
 .rmp-card {
   margin: 8px 0;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
