@@ -65,7 +65,7 @@ For developers or users who want to install manually:
 
 #### Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 20.19+ or 22.12+ and npm (Vite's supported versions)
 - Chrome or Firefox browser
 
 #### Build from Source
@@ -78,7 +78,7 @@ For developers or users who want to install manually:
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Build the extension**
@@ -115,6 +115,38 @@ For developers or users who want to install manually:
    - Go to [ASU Class Search](https://catalog.apps.asu.edu/)
    - Refresh the page
    - Rating cards should appear next to professor names
+
+#### Validation and Release Packages
+
+```bash
+npm test                   # Instructor DOM, link safety, and packaging regressions
+npm run typecheck          # TypeScript checks
+npm run check              # Tests, both builds, artifact/bundle checks, and Firefox lint
+npm run package            # All checks, then validated release ZIPs
+```
+
+Release ZIPs are written to `artifacts/asu-professorview-chrome-<version>.zip` and
+`artifacts/asu-professorview-firefox-<version>.zip`. Each archive has `manifest.json`
+at its root, fixed entry timestamps, and the referenced build files only. Packaging
+checks both manifest versions against `package.json` and verifies every ZIP entry
+after extracting it in memory. It does not sign, upload, or publish the extension.
+The shipped content bundles also run against a mocked ASU page in jsdom to verify
+that styles and all instructor cards survive production bundling.
+
+Before a store release, update the version in `package.json`, the lockfile, and
+both source manifests together. Load each built extension and test an ASU result with multiple
+instructors at desktop and mobile widths, change searches while requests are
+pending, and check compact cards, tags, settings, and Clear Cache. Automated DOM
+tests do not replace this browser smoke test or a live RMP lookup.
+
+Current checks pass with warnings: the RMP dependency includes Node-only `fs`
+helpers that Vite cannot bundle for browsers; Mozilla's linter reports four parser
+warnings in the minified background bundle and one dynamic `innerHTML` warning
+in the content bundle. Hostile template values are covered by regression tests.
+The RMP adapter and further response validation remain Phase 2 work.
+
+Implementation progress and the remaining phases are tracked in
+[the implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ---
 

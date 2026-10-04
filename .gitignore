@@ -11,6 +11,7 @@ node_modules
 dist
 dist-chrome
 dist-firefox
+artifacts/
 dist-ssr
 *.local
 

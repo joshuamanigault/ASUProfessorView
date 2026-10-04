@@ -2,6 +2,9 @@ import { defineConfig } from "vite";
 import { copyFileSync, cpSync } from "fs";
 
 const buildTarget = process.env.BUILD_TARGET || "chrome";
+if (buildTarget !== "chrome" && buildTarget !== "firefox") {
+  throw new Error(`Unsupported BUILD_TARGET: ${buildTarget}`);
+}
 const outDir = buildTarget === "firefox" ? "dist-firefox" : "dist-chrome";
 
 export default defineConfig({
