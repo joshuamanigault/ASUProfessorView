@@ -27,3 +27,4 @@ dist-ssr
 *.sw?
 
 .opencode/
+codebase-analysis-docs/
