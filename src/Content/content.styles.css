@@ -1,3 +1,9 @@
+.rmp-card-list {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
 .rmp-card {
   margin: 8px 0;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -134,11 +140,6 @@
   background: rgba(255, 255, 255, 0.7);
   border-radius: 8px;
   border: 1px solid rgba(226, 232, 240, 0.5);
-}
-
-.rmp-not-found-icon {
-  font-size: 24px;
-  opacity: 0.6;
 }
 
 .rmp-not-found-text {

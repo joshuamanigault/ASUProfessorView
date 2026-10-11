@@ -2,6 +2,9 @@ import { defineConfig } from "vite";
 import { copyFileSync, cpSync } from "fs";
 
 const buildTarget = process.env.BUILD_TARGET || "chrome";
+if (buildTarget !== "chrome" && buildTarget !== "firefox") {
+  throw new Error(`Unsupported BUILD_TARGET: ${buildTarget}`);
+}
 const outDir = buildTarget === "firefox" ? "dist-firefox" : "dist-chrome";
 
 export default defineConfig({
@@ -29,8 +32,6 @@ export default defineConfig({
         copyFileSync("src/Popup/popup.html", `${outDir}/popup.html`);
         copyFileSync("src/Options/options.html", `${outDir}/options.html`);
         copyFileSync("src/Options/options.css", `${outDir}/options.css`);
-        copyFileSync("src/Content/content.styles.css", `${outDir}/content.styles.css`);
-        copyFileSync("src/Content/templates.js", `${outDir}/templates.js`);
         copyFileSync("src/Popup/popup.js", `${outDir}/popup.js`);
       },
     },

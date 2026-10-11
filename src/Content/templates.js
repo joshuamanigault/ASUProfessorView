@@ -64,13 +64,26 @@ function createTagsHtml(tags) {
     `;
 }
 
+function createProfessorNameHtml(name, legacyId) {
+    const isValidId = (typeof legacyId === 'number' || typeof legacyId === 'string')
+        && /^[1-9]\d*$/.test(String(legacyId))
+        && Number.isSafeInteger(Number(legacyId));
+    if (!isValidId) return escapeHTML(name);
+
+    const link = document.createElement('a');
+    link.href = new URL(`/professor/${legacyId}`, 'https://www.ratemyprofessors.com').href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = name;
+    return link.outerHTML;
+}
+
 
 function createProfessorCardTemplate(name, data, showTags) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const numRatings = data.numRatings || 0;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
     const department = data.department || 'Unknown Department';
-    const professorId = data.legacyId || null;
     const topTags = showTags ? data.topTags : null;
     
     const { ratingColor, ratingBg } = getRatingColors(rating);
@@ -80,11 +93,7 @@ function createProfessorCardTemplate(name, data, showTags) {
         <div class="rmp-card-content">
             <div class="rmp-header">
                 <div class="rmp-info">
-                    <div class="rmp-name">${
-                        professorId
-                            ? `<a href="https://www.ratemyprofessors.com/professor/${professorId}" target="_blank" rel="noopener noreferrer">${escapeHTML(name)}</a>`
-                            : `${escapeHTML(name)}`
-                    }</div>
+                    <div class="rmp-name">${createProfessorNameHtml(name, data.legacyId)}</div>
                     <div class="rmp-department">${escapeHTML(department)}</div>
                 </div>
                 <div class="rmp-rating-badge" style="background-color: ${ratingBg}; color: ${ratingColor};">
@@ -140,7 +149,6 @@ function createNotFoundCardTemplate(name) {
 function createCompactCardTemplate(name, data, showTags) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
-    const professorId = data.legacyId || null;
     const topTags = showTags ? data.topTags : null;
 
 
@@ -149,11 +157,7 @@ function createCompactCardTemplate(name, data, showTags) {
 
     return `
         <div class="rmp-compact-card-content">
-            <div class="rmp-compact-name">${
-                    professorId
-                        ? `<a href="https://www.ratemyprofessors.com/professor/${professorId}" target="_blank" rel="noopener noreferrer">${escapeHTML(name)}</a>`
-                        : `${escapeHTML(name)}`
-            }</div>
+            <div class="rmp-compact-name">${createProfessorNameHtml(name, data.legacyId)}</div>
             <div>
                 <div class="rmp-rating-badge" style="background-color: ${ratingBg}; color: ${ratingColor};">
                     ${rating ? rating.toFixed(1) : 'N/A'}
