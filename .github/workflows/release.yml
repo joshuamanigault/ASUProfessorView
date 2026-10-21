@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Verify release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const read = (path) => JSON.parse(readFileSync(path, 'utf8'));
+          const { version } = read('package.json');
+          assert.equal(process.env.RELEASE_TAG, `v${version}`, 'Tag must match package.json version');
+          const lock = read('package-lock.json');
+          assert.equal(lock.version, version, 'Lockfile version must match');
+          assert.equal(lock.packages[''].version, version, 'Lockfile root version must match');
+          for (const target of ['chrome', 'firefox']) {
+            assert.equal(read(`src/manifest.${target}.json`).version, version, `${target} manifest version must match`);
+          }
+          NODE
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+      - name: Package both browsers
+        run: npm run package
+      - name: Upload release ZIPs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-zips
+          path: artifacts/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download validated release ZIPs
+        uses: actions/download-artifact@v5
+        with:
+          name: release-zips
+          path: artifacts
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" artifacts/*.zip \
+            --verify-tag \
+            --draft \
+            --title "$RELEASE_TAG" \
+            --generate-notes
