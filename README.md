@@ -1,6 +1,24 @@
-# ASU ProfessorView
+<p align="center">
+  <img src="docs/assets/logo.png" alt="ASU ProfessorView logo: a gold graduation cap above an eye on a maroon background" width="180" height="180">
+</p>
 
-**See Rate My Professor reviews directly in ASU Class Search**
+<h1 align="center">ASU ProfessorView</h1>
+
+<p align="center">
+  <strong>See Rate My Professor reviews directly in ASU Class Search</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/joshuamanigault/ASUProfessorView/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/joshuamanigault/ASUProfessorView/ci.yml?branch=main&amp;event=push&amp;label=CI&amp;logo=github" alt="CI status on main">
+  </a>
+  <a href="https://github.com/joshuamanigault/ASUProfessorView/releases/latest">
+    <img src="https://img.shields.io/github/v/release/joshuamanigault/ASUProfessorView?label=latest%20release&amp;color=blue" alt="Latest release">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
+  </a>
+</p>
 
 A cross-browser extension that enhances the Arizona State University class catalog by displaying professor ratings and reviews from Rate My Professor right where you need them. Make informed decisions about your courses without leaving the ASU catalog.
 
