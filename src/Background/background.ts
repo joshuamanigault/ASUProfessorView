@@ -1,5 +1,21 @@
 import { RateMyProfessor } from "rate-my-professor-api-ts"
 
+interface ProfessorData {
+  firstName: string;
+  lastName: string;
+  legacyId: number;
+  avgRating: number;
+  avgDifficulty: number;
+  numRatings: number;
+  department: string;
+  topTags?: string[];
+}
+
+interface CachedProfessor {
+  value: ProfessorData;
+  expiry: number;
+}
+
 const storage = chrome.storage.local;
 const CACHE_DURATION = 10 * 60 * 1000; // This is 10 mins in ms
 const CLEANUP_INTERVAL = 10 // 10 minutes
@@ -50,8 +66,8 @@ async function cleanupExpiredEntries(): Promise<void> {
   }
 }
 
-async function setWithExpiration(key: string, value: any, ttl: number): Promise<void> {
-  const item = {
+async function setWithExpiration(key: string, value: ProfessorData, ttl: number): Promise<void> {
+  const item: CachedProfessor = {
     value: value,
     expiry: Date.now() + ttl
   }
@@ -59,9 +75,9 @@ async function setWithExpiration(key: string, value: any, ttl: number): Promise<
   await storage.set({ [key]: item});
 }
 
-async function getWithExpiration(key: string): Promise<any | null> {
+async function getWithExpiration(key: string): Promise<ProfessorData | null> {
   const result = await storage.get([key]);
-  const item = result[key];
+  const item: CachedProfessor | undefined = result[key];
 
   if (!item) {
     return null;
@@ -132,7 +148,7 @@ async function getTopTags(professorName: string, campus: string): Promise<string
   }
 }
 
-async function searchAsuCampuses(professorName: string) {
+async function searchAsuCampuses(professorName: string): Promise<ProfessorData> {
   const errors: string[] = [];
   
   // Try original name first
@@ -160,7 +176,7 @@ async function searchAsuCampuses(professorName: string) {
     for (const campus of ASU_CAMPUSES) {
       try {
         const rmp_instance = new RateMyProfessor(campus, nameToSearch);
-        const result = await rmp_instance.get_professor_info();
+        const result: ProfessorData = await rmp_instance.get_professor_info();
         
         if (validateProfessor(professorName, result, nameToSearch)) {
           const topTags = await getTopTags(nameToSearch, campus);
@@ -183,7 +199,7 @@ async function searchAsuCampuses(professorName: string) {
   throw new Error(`Professor "${professorName}" not found at any ASU campus with any name variation. Tried: ${errors.join(', ')}`);
 }
 
-function validateProfessor(originalName: string, professorData: any, searchedName?: string): boolean {
+function validateProfessor(originalName: string, professorData: ProfessorData | null | undefined, searchedName?: string): boolean {
   if (!professorData || !professorData.firstName || !professorData.lastName) {
     return false;
   }
@@ -248,7 +264,7 @@ chrome.runtime.onMessage.addListener(
         try {
           const professor_info = await getRateMyProfessorData(request.professorName);
           
-          if (professor_info.error) {
+          if ('error' in professor_info) {
             sendResponse({ 
               success: false, 
               error: professor_info.message,

@@ -19,9 +19,9 @@ function setup(t, prefs = {}) {
         },
         storage: { sync: { get(defaults, callback) { callback({ ...defaults, ...prefs }); } } },
     };
-    const controller = startProfessorCards(document, extension);
+    const controller = startProfessorCards(dom.window.document, extension);
     t.after(() => { controller.disconnect(); dom.window.close(); delete globalThis.document; });
-    return { doc: document, pending, controller, extension };
+    return { doc: dom.window.document, pending, controller, extension };
 }
 
 async function flush() {
