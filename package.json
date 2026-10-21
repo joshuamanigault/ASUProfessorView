@@ -19,6 +19,7 @@
     "smoke:content": "node scripts/smoke-content.mjs",
     "check": "npm run typecheck && npm test && npm run build && npm run validate:extensions && npm run smoke:content && npm run lint:firefox",
     "package": "npm run check && node scripts/package-extension.mjs",
+    "package-ci": "node scripts/package-extension.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {
