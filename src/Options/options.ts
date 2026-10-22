@@ -1,18 +1,21 @@
 type Options = {
     compact_cards: boolean;
     show_tags: boolean;
+    copy_course_number: boolean;
 };
 
 // Defaults used when no user preference is stored yet
 const DEFAULTS: Options = {
     compact_cards: false,
-    show_tags: false
+    show_tags: false,
+    copy_course_number: true
 };
 
 // Map option keys to DOM element ids
 const KEY_TO_ID: Record<keyof Options, string> = {
     compact_cards: "compact-cards",
     show_tags: "show-tags",
+    copy_course_number: "copy-course-number"
 };
 
 function setStoreLink() {
@@ -47,7 +50,8 @@ function loadOptions(): Promise<Options> {
             // Result is a partial that always contains the provided defaults
             resolve({
                 compact_cards: Boolean(result.compact_cards),
-                show_tags: Boolean(result.show_tags)
+                show_tags: Boolean(result.show_tags),
+                copy_course_number: Boolean(result.copy_course_number)
             });
         });
     });
@@ -85,10 +89,12 @@ async function initOptionsPage() {
     const opts = await loadOptions();
     setCheckboxDom(KEY_TO_ID.compact_cards, opts.compact_cards);
     setCheckboxDom(KEY_TO_ID.show_tags, opts.show_tags);
+    setCheckboxDom(KEY_TO_ID.copy_course_number, opts.copy_course_number);
 
     // Bind interactions
     bindCheckbox("compact_cards");
     bindCheckbox("show_tags");
+    bindCheckbox("copy_course_number");
 }
 
 if (document.readyState === "loading") {
