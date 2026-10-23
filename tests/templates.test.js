@@ -40,3 +40,46 @@ test('untrusted names, departments, review counts, and tags remain text', t => {
         assert.equal(new URL(card.querySelector('a').href).searchParams.get('q'), hostile);
     }
 });
+
+test('every card layout renders one accessible copy action only when enabled', t => {
+    const dom = new JSDOM();
+    globalThis.document = dom.window.document;
+    t.after(() => { dom.window.close(); delete globalThis.document; });
+    const data = { legacyId: 123, avgRating: 4.5, avgDifficulty: 2.5, topTags: ['Helpful'] };
+    const variants = [
+        ...[createProfessorCard, createCompactCard].flatMap(create => [false, true].map(showTags => ({
+            create: enabled => create('Professor Name', data, showTags, enabled),
+            hasTags: showTags,
+        }))),
+        ...[createNotFoundCard, createCompactNotFoundCard].map(create => ({
+            create: enabled => create('Professor Name', enabled),
+            hasTags: false,
+        })),
+    ];
+
+    for (const { create, hasTags } of variants) {
+        const card = create(true);
+        assert.equal(card.querySelectorAll('.rmp-copy-course-number').length, 1);
+        const button = card.querySelector('.rmp-copy-course-number');
+        assert.equal(button.tagName, 'BUTTON');
+        assert.equal(button.type, 'button');
+        assert.equal(button.getAttribute('aria-label'), 'Copy class number');
+        assert.equal(button.title, 'Copy class number');
+        assert.equal(button.querySelector('.rmp-copy-course-number-label').textContent, 'Copy class number');
+        assert.equal(button.querySelector('svg').getAttribute('aria-hidden'), 'true');
+        assert.equal(button.querySelector('svg').getAttribute('focusable'), 'false');
+        assert.equal(button.closest('a'), null);
+        const status = card.querySelector('.rmp-copy-course-number-status');
+        assert.equal(status.getAttribute('role'), 'status');
+        assert.equal(status.getAttribute('aria-live'), 'polite');
+        assert.equal(status.textContent, '');
+        assert.equal(status.parentElement, button.parentElement);
+        assert.equal(Boolean(card.querySelector('.rmp-tag')), hasTags);
+
+        for (const enabled of [false, undefined]) {
+            const disabledCard = create(enabled);
+            assert.equal(disabledCard.querySelector('.rmp-copy-course-number-container'), null);
+            assert.equal(Boolean(disabledCard.querySelector('.rmp-tag')), hasTags);
+        }
+    }
+});

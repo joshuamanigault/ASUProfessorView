@@ -275,3 +275,84 @@
   font-size: 9px;
   border-radius: 4px;
 }
+
+/* Copy class number actions stay below the professor details in every layout. */
+.rmp-card .rmp-copy-course-number-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.rmp-card .rmp-copy-course-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 5px;
+  min-height: 30px;
+  margin: 0;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.rmp-card .rmp-copy-course-number:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.rmp-card .rmp-copy-course-number:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.rmp-card .rmp-copy-course-number:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.rmp-card .rmp-copy-course-number svg {
+  flex-shrink: 0;
+}
+
+.rmp-card .rmp-copy-course-number-status {
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+
+.rmp-card .rmp-copy-course-number[data-copy-state="success"],
+.rmp-card .rmp-copy-course-number[data-copy-state="success"] + .rmp-copy-course-number-status {
+  color: #047857;
+}
+
+.rmp-card .rmp-copy-course-number[data-copy-state="error"],
+.rmp-card .rmp-copy-course-number[data-copy-state="error"] + .rmp-copy-course-number-status {
+  color: #b91c1c;
+}
+
+.rmp-compact-card > .rmp-copy-course-number-container {
+  margin-top: 0;
+  padding: 0 12px 10px;
+}
+
+.rmp-compact-card .rmp-copy-course-number {
+  width: 28px;
+  min-height: 28px;
+  padding: 5px;
+}
+
+.rmp-compact-card .rmp-copy-course-number-label {
+  display: none;
+}

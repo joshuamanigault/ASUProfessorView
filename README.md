@@ -46,6 +46,7 @@ A cross-browser extension that enhances the Arizona State University class catal
 - **Smart Caching**: Intelligent data caching reduces API calls and improves performance
 - **Customizable Display**: Choose between compact or detailed card views
 - **Tag Insights**: See the top 5 most common student tags for each professor
+- **Copy Class Numbers**: Copy a class's numeric registration number from any professor card
 - **Cross-Campus Support**: Searches across all ASU campuses (Tempe, Polytechnic, West)
 - **Seamless Integration**: Works natively on ASU's catalog search pages
 - **Cross-Browser**: Full support for Chrome and Firefox
@@ -58,6 +59,7 @@ A cross-browser extension that enhances the Arizona State University class catal
 2. Browse courses as usual
 3. Professor rating cards automatically appear next to instructor names
 4. Click settings to customize your view preferences
+5. Use the copy button on a professor card to copy that result's numeric Class # for registration
 
 No separate Rate My Professor searches needed!
 
@@ -174,8 +176,13 @@ Click the extension icon in your browser toolbar and select "Settings" to custom
 
 - **Compact Cards**: Toggle between detailed and compact card views
 - **Show Tags**: Display or hide the top 5 student tags for each professor
+- **Show 'Copy class number' button**: Show or hide the copy action in normal and compact cards (enabled by default). Copies only the numeric Class #, such as `15448`, including when professor ratings are unavailable.
 
 Settings sync across your browser sessions.
+
+Reload Class Search after changing settings. The copy button reads the class number
+from its current result row when clicked and briefly shows "Copied!" after a successful
+copy. If copying fails, the card displays an error and allows another attempt.
 
 ---
 

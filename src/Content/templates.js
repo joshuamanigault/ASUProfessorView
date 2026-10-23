@@ -64,6 +64,20 @@ function createTagsHtml(tags) {
     `;
 }
 
+function createCopyCourseNumberButton() {
+    return `
+        <div class="rmp-copy-course-number-container">
+            <button class="rmp-copy-course-number" type="button" aria-label="Copy class number" title="Copy class number">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false">
+                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                </svg>
+                <span class="rmp-copy-course-number-label">Copy class number</span>
+            </button>
+            <span class="rmp-copy-course-number-status" role="status" aria-live="polite" aria-atomic="true"></span>
+        </div>
+    `;
+}
+
 function createProfessorNameHtml(name, legacyId) {
     const isValidId = (typeof legacyId === 'number' || typeof legacyId === 'string')
         && /^[1-9]\d*$/.test(String(legacyId))
@@ -79,7 +93,7 @@ function createProfessorNameHtml(name, legacyId) {
 }
 
 
-function createProfessorCardTemplate(name, data, showTags) {
+function createProfessorCardTemplate(name, data, showTags, showCopyCourseNumberButton) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const numRatings = data.numRatings || 0;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
@@ -115,11 +129,12 @@ function createProfessorCardTemplate(name, data, showTags) {
                 ` : ''}
             </div>
             ${createTagsHtml(topTags)}
+            ${showCopyCourseNumberButton ? createCopyCourseNumberButton() : ''}
         </div>
     `;
 }
 
-function createNotFoundCardTemplate(name) {
+function createNotFoundCardTemplate(name, showCopyCourseNumberButton) {
     const normalizedName = (name || '').replace(/\s+/g, ' ').trim();
     const searchUrl = `https://www.ratemyprofessors.com/search/professors/15723?q=${encodeURIComponent(normalizedName)}`;
 
@@ -142,11 +157,12 @@ function createNotFoundCardTemplate(name) {
                     </div>
                 </div>
             </div>
+            ${showCopyCourseNumberButton ? createCopyCourseNumberButton() : ''}
         </div>
     `;
 }
 
-function createCompactCardTemplate(name, data, showTags) {
+function createCompactCardTemplate(name, data, showTags, showCopyCourseNumberButton) {
     const rating = data.avgRating ? parseFloat(data.avgRating) : null;
     const difficulty = data.avgDifficulty ? parseFloat(data.avgDifficulty) : null;
     const topTags = showTags ? data.topTags : null;
@@ -172,10 +188,11 @@ function createCompactCardTemplate(name, data, showTags) {
             </div>
         </div>
         ${createTagsHtml(topTags)}
+        ${showCopyCourseNumberButton ? createCopyCourseNumberButton() : ''}
     `;
 }
 
-function createCompactNotFoundCardTemplate(name) {
+function createCompactNotFoundCardTemplate(name, showCopyCourseNumberButton) {
     const normalizedName = (name || '').replace(/\s+/g, ' ').trim();
     const searchUrl = `https://www.ratemyprofessors.com/search/professors/15723?q=${encodeURIComponent(normalizedName)}`;
 
@@ -186,37 +203,38 @@ function createCompactNotFoundCardTemplate(name) {
                 No data · Search RMP
             </a>
         </div>
+        ${showCopyCourseNumberButton ? createCopyCourseNumberButton() : ''}
     `;
 }
 
-export function createProfessorCard(name, data, showTags) {
+export function createProfessorCard(name, data, showTags, showCopyCourseNumberButton) {
     const card = document.createElement('div');
     card.className = 'rmp-card';
-    const content = createElementFromHTML(createProfessorCardTemplate(name, data, showTags));
+    const content = createElementFromHTML(createProfessorCardTemplate(name, data, showTags, showCopyCourseNumberButton));
     card.appendChild(content);
     return card;
 }
 
-export function createNotFoundCard(name) {
+export function createNotFoundCard(name, showCopyCourseNumberButton) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-not-found';
-    const content = createElementFromHTML(createNotFoundCardTemplate(name));
+    const content = createElementFromHTML(createNotFoundCardTemplate(name, showCopyCourseNumberButton));
     card.appendChild(content);
     return card;
 }
 
-export function createCompactCard(name, data, showTags) {
+export function createCompactCard(name, data, showTags, showCopyCourseNumberButton) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-compact-card';
-    const content = createElementFromHTML(createCompactCardTemplate(name, data, showTags));
+    const content = createElementFromHTML(createCompactCardTemplate(name, data, showTags, showCopyCourseNumberButton));
     card.appendChild(content);
     return card;
 }
 
-export function createCompactNotFoundCard(name) {
+export function createCompactNotFoundCard(name, showCopyCourseNumberButton) {
     const card = document.createElement('div');
     card.className = 'rmp-card rmp-compact-card';
-    const content = createElementFromHTML(createCompactNotFoundCardTemplate(name));
+    const content = createElementFromHTML(createCompactNotFoundCardTemplate(name, showCopyCourseNumberButton));
     card.appendChild(content);
     return card;
 }

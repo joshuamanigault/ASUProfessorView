@@ -1,5 +1,6 @@
 import { Semaphore } from 'es-toolkit';
 import { createProfessorCard, createNotFoundCard, createCompactCard, createCompactNotFoundCard } from './templates.js';
+import { bindCopyCourseNumber } from './copy-course-number.js';
 
 const INSTRUCTOR_SELECTOR = 'div.instructor.class-results-cell';
 const MUTATION_DEBOUNCE_MS = 250;
@@ -36,11 +37,15 @@ export function startProfessorCards(doc, extension) {
 
     function loadOptions() {
         optionsPromise ??= new Promise((resolve, reject) => {
-            extension.storage.sync.get({ compact_cards: false, show_tags: false }, (prefs) => {
+            extension.storage.sync.get({ compact_cards: false, show_tags: false, copy_course_number: true }, (prefs) => {
                 if (extension.runtime.lastError) {
                     reject(new Error(extension.runtime.lastError.message));
                 } else {
-                    resolve({ useCompact: Boolean(prefs.compact_cards), showTags: Boolean(prefs.show_tags) });
+                    resolve({
+                        useCompact: Boolean(prefs.compact_cards),
+                        showTags: Boolean(prefs.show_tags),
+                        showCopyCourseNumberButton: Boolean(prefs.copy_course_number),
+                    });
                 }
             });
         });
@@ -85,9 +90,12 @@ export function startProfessorCards(doc, extension) {
             if (JSON.stringify(findInstructors(cell)) !== state.signature) return;
             const createFound = options.useCompact ? createCompactCard : createProfessorCard;
             const createMissing = options.useCompact ? createCompactNotFoundCard : createNotFoundCard;
-            slot.replaceChildren(response?.success
-                ? createFound(name, response.data, options.showTags)
-                : createMissing(name));
+            const card = response?.success
+                ? createFound(name, response.data, options.showTags, options.showCopyCourseNumberButton)
+                : createMissing(name, options.showCopyCourseNumberButton);
+            bindCopyCourseNumber(card, cell, () => !stopped
+                && cellStates.get(cell) === state && state.container.parentElement === cell);
+            slot.replaceChildren(card);
         } catch (error) {
             console.error('Could not display professor card:', error);
         }
