@@ -29,6 +29,13 @@ async function flush() {
     await tick();
 }
 
+function setClipboard(doc, writeText) {
+    Object.defineProperty(doc.defaultView.navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText },
+    });
+}
+
 test('renders every instructor, outside responsive spans, without altering the name list', async t => {
     const { doc, pending } = setup(t);
     const cell = doc.getElementById('multiple');
@@ -157,4 +164,186 @@ test('limits lookups to three and releases a permit after transport errors', asy
     await flush();
     assert.equal(doc.querySelectorAll('.rmp-card').length, 5);
     assert.equal(errors.mock.callCount(), 2); // Both rows waiting for the same failed name.
+});
+
+test('copies the current class number for each row, including shared and multiple instructors', async t => {
+    const { doc, pending, controller } = setup(t);
+    const copied = [];
+    setClipboard(doc, async value => { copied.push(value); });
+    await flush();
+    pending.forEach(p => p.callback(response));
+    await flush();
+    const buttons = [...doc.querySelectorAll('.rmp-copy-course-number')];
+    assert.equal(buttons.length, 4);
+    buttons.forEach(button => button.click());
+    assert.deepEqual(copied, ['15448', '15448', '15448', '15449']);
+    await flush();
+    assert.ok(buttons.every(button => !button.disabled));
+    assert.ok([...doc.querySelectorAll('.rmp-copy-course-number-status')].every(status => status.textContent === 'Copied!'));
+
+    const cell = doc.getElementById('multiple');
+    cell.closest('.class-accordion').querySelector('.number').innerHTML = '<div><span class="sr-only">Class number: </span>24567</div>';
+    controller.scan();
+    await flush();
+    assert.equal(pending.length, 3);
+    assert.equal(cell.querySelector('.rmp-copy-course-number'), buttons[0]);
+    buttons[0].click();
+    await flush();
+    assert.equal(copied.at(-1), '24567');
+});
+
+test('copy option reaches found and missing cards in every layout and tag combination', async t => {
+    for (const compact_cards of [false, true]) {
+        for (const show_tags of [false, true]) {
+            for (const copy_course_number of [false, true]) {
+                await t.test(JSON.stringify({ compact_cards, show_tags, copy_course_number }), async t => {
+                    const { doc, pending } = setup(t, { compact_cards, show_tags, copy_course_number });
+                    const copied = [];
+                    setClipboard(doc, async value => { copied.push(value); });
+                    await flush();
+                    pending[0].callback(response);
+                    pending[1].callback({ success: false });
+                    pending[2].callback(response);
+                    await flush();
+                    assert.equal(doc.querySelectorAll('.rmp-card').length, 4);
+                    assert.equal(doc.querySelectorAll('.rmp-compact-card').length, compact_cards ? 4 : 0);
+                    assert.equal(doc.querySelectorAll('.rmp-tag').length, show_tags ? 3 : 0);
+                    const buttons = [...doc.querySelectorAll('.rmp-copy-course-number')];
+                    assert.equal(buttons.length, copy_course_number ? 4 : 0);
+                    buttons.forEach(button => button.click());
+                    await flush();
+                    assert.deepEqual(copied, copy_course_number ? ['15448', '15448', '15448', '15449'] : []);
+                });
+            }
+        }
+    }
+});
+
+test('prevents duplicate writes while pending and allows another copy after completion', async t => {
+    const { doc, pending } = setup(t);
+    const copied = [];
+    let finishCopy;
+    setClipboard(doc, value => {
+        copied.push(value);
+        return new Promise(resolve => { finishCopy = resolve; });
+    });
+    await flush();
+    pending.forEach(p => p.callback(response));
+    await flush();
+    const button = doc.querySelector('.rmp-copy-course-number');
+    button.click();
+    assert.deepEqual(copied, ['15448']); // Invoked synchronously within the click.
+    assert.equal(button.disabled, true);
+    button.click();
+    assert.equal(copied.length, 1);
+    finishCopy();
+    await flush();
+    assert.equal(button.disabled, false);
+    button.click();
+    assert.deepEqual(copied, ['15448', '15448']);
+    finishCopy();
+    await flush();
+});
+
+test('clipboard failures show feedback and permit a successful retry', async t => {
+    const { doc, pending } = setup(t);
+    await flush();
+    pending.forEach(p => p.callback(response));
+    await flush();
+    const button = doc.querySelector('.rmp-copy-course-number');
+    const status = doc.querySelector('.rmp-copy-course-number-status');
+    for (const writeText of [
+        () => { throw new Error('Clipboard denied'); },
+        async () => { throw new Error('Clipboard denied'); },
+    ]) {
+        setClipboard(doc, writeText);
+        button.click();
+        await flush();
+        assert.equal(button.disabled, false);
+        assert.equal(button.dataset.copyState, 'error');
+        assert.match(status.textContent, /could not copy/i);
+    }
+    const copied = [];
+    setClipboard(doc, async value => { copied.push(value); });
+    button.click();
+    await flush();
+    assert.deepEqual(copied, ['15448']);
+    assert.equal(button.dataset.copyState, 'success');
+    assert.equal(status.textContent, 'Copied!');
+});
+
+test('unavailable clipboard and missing or malformed numbers never copy another row', async t => {
+    const { doc, pending } = setup(t);
+    await flush();
+    pending.forEach(p => p.callback(response));
+    await flush();
+    const cell = doc.getElementById('multiple');
+    const button = cell.querySelector('.rmp-copy-course-number');
+    const status = cell.querySelector('.rmp-copy-course-number-status');
+    button.click();
+    await flush();
+    assert.match(status.textContent, /clipboard unavailable/i);
+    const copied = [];
+    setClipboard(doc, async value => { copied.push(value); });
+    const numberCell = cell.closest('.class-accordion').querySelector('.number');
+    for (const text of ['', 'CSE 110', '15448 15449', 'Class number: 15448']) {
+        numberCell.textContent = text;
+        button.click();
+        await flush();
+        assert.equal(button.dataset.copyState, 'error');
+        assert.match(status.textContent, /class number unavailable/i);
+    }
+    numberCell.remove();
+    button.click();
+    await flush();
+    assert.deepEqual(copied, []);
+    assert.match(status.textContent, /class number unavailable/i);
+    assert.equal(doc.getElementById('single').closest('.class-accordion').querySelector('.number').textContent.trim(), 'Class number: 15449');
+});
+
+test('copy clicks and activation keys do not trigger the enclosing ASU accordion', async t => {
+    const { doc, pending } = setup(t);
+    setClipboard(doc, async () => {});
+    await flush();
+    pending.forEach(p => p.callback(response));
+    await flush();
+    const button = doc.querySelector('.rmp-copy-course-number');
+    const row = button.closest('.class-accordion');
+    const keys = [];
+    let clicks = 0;
+    row.addEventListener('click', () => { clicks += 1; });
+    row.addEventListener('keydown', event => { keys.push(event.key); });
+    for (const key of ['Enter', ' ', 'ArrowDown']) {
+        button.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown', { key, bubbles: true }));
+    }
+    button.click();
+    await flush();
+    assert.equal(clicks, 0);
+    assert.deepEqual(keys, ['ArrowDown']);
+});
+
+test('detached cards and disconnected controllers cannot copy or report pending success', async t => {
+    const { doc, pending, controller } = setup(t);
+    const copied = [];
+    let finishCopy;
+    setClipboard(doc, value => {
+        copied.push(value);
+        return new Promise(resolve => { finishCopy = resolve; });
+    });
+    await flush();
+    pending.forEach(p => p.callback(response));
+    await flush();
+    const detached = doc.querySelector('#single .rmp-card');
+    detached.remove();
+    detached.querySelector('.rmp-copy-course-number').click();
+    assert.deepEqual(copied, []);
+    const button = doc.querySelector('.rmp-copy-course-number');
+    button.click();
+    controller.disconnect();
+    finishCopy();
+    await flush();
+    assert.equal(button.disabled, false);
+    assert.equal(doc.querySelector('.rmp-copy-course-number-status').textContent, '');
+    button.click();
+    assert.deepEqual(copied, ['15448']);
 });

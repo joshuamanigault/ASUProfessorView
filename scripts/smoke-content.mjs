@@ -11,6 +11,10 @@ for (const target of ['chrome', 'firefox']) {
         runScripts: 'outside-only',
     });
     const requests = [];
+    const copied = [];
+    Object.defineProperty(dom.window.navigator, 'clipboard', {
+        value: { async writeText(value) { copied.push(value); } },
+    });
     dom.window.chrome = {
         runtime: {
             id: 'bundle-smoke-test',
@@ -36,7 +40,17 @@ for (const target of ['chrome', 'firefox']) {
         assert.equal(doc.querySelector('.d-none .rmp-card'), null);
         assert.equal(doc.querySelectorAll('#rmp-card-styles').length, 1);
         assert.ok(doc.getElementById('rmp-card-styles').textContent.includes('.rmp-card-list'));
-        console.log(`${target}: shipped content bundle injected styles and all instructor cards`);
+        assert.equal(doc.querySelectorAll('.rmp-copy-course-number').length, 4);
+        for (const id of ['multiple', 'single']) {
+            const button = doc.getElementById(id).querySelector('.rmp-copy-course-number');
+            button.click();
+            await tick();
+            assert.equal(button.disabled, false);
+            assert.equal(button.dataset.copyState, 'success');
+            assert.equal(doc.getElementById(id).querySelector('.rmp-copy-course-number-status').textContent, 'Copied!');
+        }
+        assert.deepEqual(copied, ['15448', '15449']);
+        console.log(`${target}: shipped content bundle injected styles, all instructor cards, and working class-number copy buttons`);
     } finally {
         dom.window.close();
     }
