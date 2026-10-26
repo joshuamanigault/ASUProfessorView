@@ -123,6 +123,7 @@ for (const target of ['chrome', 'firefox']) {
         const foundLink = doc.querySelector('#single .rmp-card a');
         assert.equal(foundLink.textContent, 'Phillip Miller');
         assert.equal(foundLink.href, 'https://www.ratemyprofessors.com/professor/123');
+        assert.deepEqual([...doc.querySelectorAll('#single .rmp-rating-badge')].map(el => el.textContent.trim()), ['4.5', '2.0']);
         for (const id of ['multiple', 'single']) doc.getElementById(id).querySelector('.rmp-copy-course-number').click();
         await tick();
         assert.deepEqual(copied, ['15448', '15449']);
