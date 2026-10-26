@@ -17,8 +17,10 @@
     "validate:extensions": "node scripts/validate-extension.mjs",
     "lint:firefox": "addons-linter dist-firefox --boring",
     "smoke:content": "node scripts/smoke-content.mjs",
-    "check": "npm run typecheck && npm test && npm run build && npm run validate:extensions && npm run smoke:content && npm run lint:firefox",
-    "package": "npm run check && node scripts/package-extension.mjs",
+    "smoke:extension": "node scripts/smoke-extension.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run validate:extensions && npm run smoke:content && npm run smoke:extension && npm run lint:firefox",
+    "package:extensions": "node scripts/package-extension.mjs",
+    "package": "npm run check && npm run package:extensions",
     "preview": "vite preview"
   },
   "devDependencies": {

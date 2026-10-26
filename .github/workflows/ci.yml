@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  merge_group:
 
 permissions:
   contents: read
@@ -13,6 +14,7 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -27,6 +29,7 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -41,6 +44,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -56,6 +60,7 @@ jobs:
   build:
     needs: [lint, typecheck, test]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -73,6 +78,7 @@ jobs:
   validate-extensions:
     needs: [build]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -90,11 +96,16 @@ jobs:
         run: npm run validate:extensions
       - name: Smoke-test production content bundles
         run: npm run smoke:content
+      - name: Exercise shipped extension message and data flow
+        run: npm run smoke:extension
+      - name: Verify release ZIP creation
+        run: npm run package:extensions
 
 
   validate-firefox:
     needs: [build]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -110,3 +121,24 @@ jobs:
           name: dist
       - name: Validate Firefox extension
         run: npm run lint:firefox
+
+  ci:
+    name: CI gate
+    if: ${{ always() }}
+    needs: [lint, typecheck, test, build, validate-extensions, validate-firefox]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every production check to succeed
+        env:
+          CHECK_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node <<'NODE'
+          const checks = JSON.parse(process.env.CHECK_RESULTS);
+          for (const [name, { result }] of Object.entries(checks)) {
+            if (result !== 'success') {
+              console.error(`${name}: ${result}`);
+              process.exitCode = 1;
+            }
+          }
+          NODE
