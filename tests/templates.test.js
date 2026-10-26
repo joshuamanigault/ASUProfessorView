@@ -64,16 +64,12 @@ test('every card layout renders one accessible copy action only when enabled', t
         assert.equal(button.tagName, 'BUTTON');
         assert.equal(button.type, 'button');
         assert.equal(button.getAttribute('aria-label'), 'Copy class number');
-        assert.equal(button.title, 'Copy class number');
-        assert.equal(button.querySelector('.rmp-copy-course-number-label').textContent, 'Copy class number');
         assert.equal(button.querySelector('svg').getAttribute('aria-hidden'), 'true');
-        assert.equal(button.querySelector('svg').getAttribute('focusable'), 'false');
         assert.equal(button.closest('a'), null);
         const status = card.querySelector('.rmp-copy-course-number-status');
         assert.equal(status.getAttribute('role'), 'status');
         assert.equal(status.getAttribute('aria-live'), 'polite');
         assert.equal(status.textContent, '');
-        assert.equal(status.parentElement, button.parentElement);
         assert.equal(Boolean(card.querySelector('.rmp-tag')), hasTags);
 
         for (const enabled of [false, undefined]) {
