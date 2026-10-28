@@ -195,6 +195,12 @@ test('stored options reach found and missing cards in both layouts', async t => 
     for (const prefs of [
         { compact_cards: false, show_tags: false, copy_course_number: false },
         { compact_cards: true, show_tags: true, copy_course_number: true },
+        { compact_cards: false, show_tags: true, copy_course_number: false },
+        { compact_cards: true, show_tags: false, copy_course_number: true },
+        { compact_cards: false, show_tags: false, copy_course_number: true },
+        { compact_cards: true, show_tags: true, copy_course_number: false },
+        { compact_cards: true, show_tags: false, copy_course_number: false },
+        { compact_cards: false, show_tags: true, copy_course_number: true },
     ]) {
         await t.test(JSON.stringify(prefs), async t => {
             const { doc, pending } = setup(t, prefs);
