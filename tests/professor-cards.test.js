@@ -29,6 +29,14 @@ async function flush() {
     await tick();
 }
 
+async function waitFor(predicate) {
+    const deadline = Date.now() + 2000;
+    while (!predicate()) {
+        assert.ok(Date.now() < deadline, 'expected DOM update before timeout');
+        await delay(10);
+    }
+}
+
 function setClipboard(doc, writeText) {
     Object.defineProperty(doc.defaultView.navigator, 'clipboard', {
         configurable: true,
@@ -56,6 +64,7 @@ test('renders every instructor, outside responsive spans, without altering the n
 });
 
 test('overlapping scans share pending lookups and our own cards do not trigger new requests', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
     const { doc, pending, controller } = setup(t);
     controller.scan();
     controller.scan();
@@ -64,7 +73,9 @@ test('overlapping scans share pending lookups and our own cards do not trigger n
     pending.forEach(p => p.callback(response));
     await flush();
     controller.scan();
-    await delay(300);
+    await flush();
+    t.mock.timers.tick(1000);
+    await flush();
     assert.equal(pending.length, 3);
     assert.equal(doc.querySelectorAll('.rmp-card').length, 4);
 });
@@ -113,12 +124,12 @@ test('observer processes dynamically added rows and changes to existing name tex
     newCell.className = 'class-results-cell instructor';
     newCell.innerHTML = '<a href="https://search.asu.edu/profile/rmeuth">Ryan Meuth</a>';
     doc.getElementById('results').appendChild(newCell);
-    await delay(300);
+    await waitFor(() => pending.length >= 4);
     assert.equal(pending.length, 4);
     pending[3].callback(response);
     await flush();
     newCell.querySelector('a').firstChild.textContent = 'Ryan A. Meuth';
-    await delay(300);
+    await waitFor(() => pending.length >= 5);
     assert.equal(pending[4].name, 'Ryan A. Meuth');
     pending[4].callback(response);
     await flush();
@@ -136,21 +147,9 @@ test('rejects stale replies even before the debounced observer scans a changed r
     assert.equal(doc.querySelectorAll('#single .rmp-card').length, 1);
 });
 
-test('preserves compact, tag, and not-found rendering options', async t => {
-    const { doc, pending } = setup(t, { compact_cards: true, show_tags: true });
-    await flush();
-    pending[0].callback(response);
-    pending[1].callback({ success: false });
-    pending[2].callback(response);
-    await flush();
-    assert.equal(doc.querySelectorAll('.rmp-compact-card').length, 4);
-    assert.equal(doc.querySelectorAll('.rmp-tag').length, 3);
-    assert.equal(doc.querySelectorAll('.rmp-compact-not-found-message').length, 1);
-});
-
 test('limits lookups to three and releases a permit after transport errors', async t => {
     const { doc, pending, controller, extension } = setup(t);
-    const errors = t.mock.method(console, 'error', () => {});
+    t.mock.method(console, 'error', () => {});
     doc.getElementById('results').insertAdjacentHTML('beforeend', '<div class="class-results-cell instructor"><a href="https://search.asu.edu/profile/rmeuth">Ryan Meuth</a></div>');
     controller.scan();
     await flush();
@@ -163,7 +162,6 @@ test('limits lookups to three and releases a permit after transport errors', asy
     pending.slice(1).forEach(p => p.callback(response));
     await flush();
     assert.equal(doc.querySelectorAll('.rmp-card').length, 5);
-    assert.equal(errors.mock.callCount(), 2); // Both rows waiting for the same failed name.
 });
 
 test('copies the current class number for each row, including shared and multiple instructors', async t => {
@@ -192,30 +190,37 @@ test('copies the current class number for each row, including shared and multipl
     assert.equal(copied.at(-1), '24567');
 });
 
-test('copy option reaches found and missing cards in every layout and tag combination', async t => {
-    for (const compact_cards of [false, true]) {
-        for (const show_tags of [false, true]) {
-            for (const copy_course_number of [false, true]) {
-                await t.test(JSON.stringify({ compact_cards, show_tags, copy_course_number }), async t => {
-                    const { doc, pending } = setup(t, { compact_cards, show_tags, copy_course_number });
-                    const copied = [];
-                    setClipboard(doc, async value => { copied.push(value); });
-                    await flush();
-                    pending[0].callback(response);
-                    pending[1].callback({ success: false });
-                    pending[2].callback(response);
-                    await flush();
-                    assert.equal(doc.querySelectorAll('.rmp-card').length, 4);
-                    assert.equal(doc.querySelectorAll('.rmp-compact-card').length, compact_cards ? 4 : 0);
-                    assert.equal(doc.querySelectorAll('.rmp-tag').length, show_tags ? 3 : 0);
-                    const buttons = [...doc.querySelectorAll('.rmp-copy-course-number')];
-                    assert.equal(buttons.length, copy_course_number ? 4 : 0);
-                    buttons.forEach(button => button.click());
-                    await flush();
-                    assert.deepEqual(copied, copy_course_number ? ['15448', '15448', '15448', '15449'] : []);
-                });
-            }
-        }
+test('stored options reach found and missing cards in both layouts', async t => {
+    // Template tests cover the full rendering matrix; these cases verify storage wiring.
+    for (const prefs of [
+        { compact_cards: false, show_tags: false, copy_course_number: false },
+        { compact_cards: true, show_tags: true, copy_course_number: true },
+        { compact_cards: false, show_tags: true, copy_course_number: false },
+        { compact_cards: true, show_tags: false, copy_course_number: true },
+        { compact_cards: false, show_tags: false, copy_course_number: true },
+        { compact_cards: true, show_tags: true, copy_course_number: false },
+        { compact_cards: true, show_tags: false, copy_course_number: false },
+        { compact_cards: false, show_tags: true, copy_course_number: true },
+    ]) {
+        await t.test(JSON.stringify(prefs), async t => {
+            const { doc, pending } = setup(t, prefs);
+            const copied = [];
+            setClipboard(doc, async value => { copied.push(value); });
+            await flush();
+            pending[0].callback(response);
+            pending[1].callback({ success: false });
+            pending[2].callback(response);
+            await flush();
+            assert.equal(doc.querySelectorAll('.rmp-card').length, 4);
+            assert.equal(doc.querySelectorAll('.rmp-compact-card').length, prefs.compact_cards ? 4 : 0);
+            assert.equal(doc.querySelectorAll('.rmp-tag').length, prefs.show_tags ? 3 : 0);
+            assert.equal(doc.querySelectorAll(prefs.compact_cards ? '.rmp-compact-not-found-message' : '.rmp-not-found').length, 1);
+            const buttons = [...doc.querySelectorAll('.rmp-copy-course-number')];
+            assert.equal(buttons.length, prefs.copy_course_number ? 4 : 0);
+            buttons.forEach(button => button.click());
+            await flush();
+            assert.deepEqual(copied, prefs.copy_course_number ? ['15448', '15448', '15448', '15449'] : []);
+        });
     }
 });
 

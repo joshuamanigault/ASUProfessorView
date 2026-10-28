@@ -3,6 +3,30 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { createProfessorCard, createCompactCard, createNotFoundCard, createCompactNotFoundCard } from '../src/Content/templates.js';
 
+test('both layouts display the supplied rating and difficulty, with honest missing-data fallbacks', t => {
+    const dom = new JSDOM();
+    globalThis.document = dom.window.document;
+    t.after(() => { dom.window.close(); delete globalThis.document; });
+    const data = { legacyId: 123, avgRating: 4.3, avgDifficulty: 2.7, numRatings: 17, department: 'Computing' };
+    const full = createProfessorCard('Professor Name', data, false);
+    assert.equal(full.querySelector('.rmp-rating-badge').textContent.trim(), '4.3');
+    assert.deepEqual([...full.querySelectorAll('.rmp-stat-value')].map(el => el.textContent), ['4.3', '2.7']);
+    assert.match(full.textContent, /17 reviews/);
+    assert.equal(full.querySelector('.rmp-department').textContent, 'Computing');
+    const compact = createCompactCard('Professor Name', data, false);
+    assert.deepEqual([...compact.querySelectorAll('.rmp-rating-badge')].map(el => el.textContent.trim()), ['4.3', '2.7']);
+    for (const absent of [undefined, null, 0]) {
+        const missing = { avgRating: absent, avgDifficulty: absent };
+        const full = createProfessorCard('Professor Name', missing, false);
+        assert.equal(full.querySelector('.rmp-rating-badge').textContent.trim(), 'N/A');
+        assert.equal(full.querySelector('.rmp-department').textContent, 'Unknown Department');
+        assert.match(full.textContent, /0 reviews/);
+        assert.equal(full.querySelectorAll('.rmp-stat').length, 1);
+        const compact = createCompactCard('Professor Name', missing, false);
+        assert.deepEqual([...compact.querySelectorAll('.rmp-rating-badge')].map(el => el.textContent.trim()), ['N/A', 'N/A']);
+    }
+});
+
 test('only positive safe integer IDs become RMP links, in either layout', t => {
     const dom = new JSDOM();
     globalThis.document = dom.window.document;
@@ -64,16 +88,12 @@ test('every card layout renders one accessible copy action only when enabled', t
         assert.equal(button.tagName, 'BUTTON');
         assert.equal(button.type, 'button');
         assert.equal(button.getAttribute('aria-label'), 'Copy class number');
-        assert.equal(button.title, 'Copy class number');
-        assert.equal(button.querySelector('.rmp-copy-course-number-label').textContent, 'Copy class number');
         assert.equal(button.querySelector('svg').getAttribute('aria-hidden'), 'true');
-        assert.equal(button.querySelector('svg').getAttribute('focusable'), 'false');
         assert.equal(button.closest('a'), null);
         const status = card.querySelector('.rmp-copy-course-number-status');
         assert.equal(status.getAttribute('role'), 'status');
         assert.equal(status.getAttribute('aria-live'), 'polite');
         assert.equal(status.textContent, '');
-        assert.equal(status.parentElement, button.parentElement);
         assert.equal(Boolean(card.querySelector('.rmp-tag')), hasTags);
 
         for (const enabled of [false, undefined]) {

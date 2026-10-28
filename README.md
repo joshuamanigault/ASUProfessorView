@@ -141,9 +141,9 @@ For developers or users who want to install manually:
 #### Validation and Release Packages
 
 ```bash
-npm test                   # Instructor DOM, link safety, and packaging regressions
+npm test                   # Background, settings/popup, card behavior, safety, packaging
 npm run typecheck          # TypeScript checks
-npm run check              # Tests, both builds, artifact/bundle checks, and Firefox lint
+npm run check              # Lint, types, tests, both builds, bundle checks, Firefox lint
 npm run package            # All checks, then validated release ZIPs
 ```
 
@@ -153,7 +153,9 @@ at its root, fixed entry timestamps, and the referenced build files only. Packag
 checks both manifest versions against `package.json` and verifies every ZIP entry
 after extracting it in memory. It does not sign, upload, or publish the extension.
 The shipped content bundles also run against a mocked ASU page in jsdom to verify
-that styles and all instructor cards survive production bundling.
+that styles and all instructor cards survive production bundling. A second smoke
+check connects the shipped settings, content, background, and popup scripts using
+browser API doubles and RMP HTTP fixtures, exercising the actual bundled RMP parser.
 
 Before a store release, update the version in `package.json`, the lockfile, and
 both source manifests together. Load each built extension and test an ASU result with multiple

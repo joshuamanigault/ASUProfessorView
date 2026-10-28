@@ -222,10 +222,13 @@ function validateProfessor(originalName: string, professorData: ProfessorData | 
 
 async function getRateMyProfessorData(professorName: string) {
   const cacheKey = professorName.toLowerCase().trim();
-  const cachedData = await getWithExpiration(cacheKey);
-
-  if (cachedData !== null) {
-    return cachedData;
+  try {
+    const cachedData = await getWithExpiration(cacheKey);
+    if (cachedData !== null) {
+      return cachedData;
+    }
+  } catch (storageError) {
+    console.warn(`Cache read failed for "${professorName}":`, storageError);
   }
 
   try {
