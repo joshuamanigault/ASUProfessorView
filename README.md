@@ -157,11 +157,6 @@ that styles and all instructor cards survive production bundling. A second smoke
 check connects the shipped settings, content, background, and popup scripts using
 browser API doubles and RMP HTTP fixtures, exercising the actual bundled RMP parser.
 
-See the [test and CI audit](docs/testing-audit.md) for coverage boundaries,
-fault-injection evidence, and remaining production checks. CI provides an aggregate
-`CI gate` check; require it in the main-branch protection rule to block merges when
-any validation fails, is cancelled, or is skipped.
-
 Before a store release, update the version in `package.json`, the lockfile, and
 both source manifests together. Load each built extension and test an ASU result with multiple
 instructors at desktop and mobile widths, change searches while requests are
